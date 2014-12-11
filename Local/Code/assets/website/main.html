@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html;charset=UTF-8">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1">
+<meta name="description" content="Rosie Wallet Test App">
+<meta name="ROBOTS" content="NOINDEX, NOFOLLOW">
+<title>Rosie Wallet Test App</title>
+<link type="text/css" rel="stylesheet" href="file:///android_asset/website/r/css/main.css"></head>
+<link rel="stylesheet" href="file:///android_asset/website/r/css/jquery.mobile-1.4.4.min.css" />
+<script type="text/javascript" src="file:///android_asset/website/r/js/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="file:///android_asset/website/r/js/jquery.mobile-1.4.4.min.js"></script>
+<script type="text/javascript" src="file:///android_asset/website/r/js/jquery.qrcode-0.11.0.min.js"></script>
+<script type="text/javascript" src="file:///android_asset/website/r/js/script.js"></script>
+</head>
+<body>
+	<!-- HOME PAGE ================================================================= -->
+	<div id="main-page" data-role="page">
+        <div data-role="header" data-position="fixed" class="home-page-header">
+        	<img id="title-image" src="file:///android_asset/website/r/img/rosiewallet-title-logo-60.png">
+		<div id="div-image-tbtc"><img id="vc-image-tbtc" src="file:///android_asset/website/r/img/rosiewallet-vc-image-tbtc.png"></div>
+		<div id="div-image-btc" style="display: none;"><img id="vc-image-btc" src="file:///android_asset/website/r/img/rosiewallet-vc-image-btc.png"></div>
+		<div id="div-image-ltc" style="display: none;"><img id="vc-image-ltc" src="file:///android_asset/website/r/img/rosiewallet-vc-image-ltc.png"></div>
+		<div id="div-image-ppc" style="display: none;"><img id="vc-image-ppc" src="file:///android_asset/website/r/img/rosiewallet-vc-image-ppc.png"></div>
+        </div><!-- /header -->
+
+        <div id="main-content" data-role="content" class="main-page-content">
+		<div id="home-page">
+        	<div id="home-content" data-role="content">
+        	<div id="home-content-header"><h3>Rosie Wallet Testnet Bitcoin Test App</h3></div>
+        	<div id="bitcoin-address"></div>
+        	<div id="bitcoin-delete"></div>
+        	<div id="bitcoin-qrcode" align="center"></div>
+		<h3><div id="bitcoin-balance"></div></h3>
+		<div id="bitcoin-unconfirmbalance"></div>
+		<div id="div-newaccount"><input id="btn-bitcoin-newaccount" type="button" data-role="button" data-theme="b" value="New Wallet" /></div>
+        	<div id="div-no" style="display: none;"><input id="btn-bitcoin-no" type="button" data-role="button" data-theme="b" value="No" /></div>
+        	<div id="div-yes" style="display: none;"><input id="btn-bitcoin-yes" type="button" data-role="button" data-theme="b" value="Yes" /></div>
+        	<div data-role="controlgroup" data-mini="true">
+		<div id="div-home-sign">
+		<input id="btn-home-sign" type="button" data-role="button" data-theme="b" value="Sign" />
+		</div>
+		<div id="div-home-verify">
+		<input id="btn-home-verify" type="button" data-role="button" data-theme="b" value="Verify" />
+		</div>
+		</div><div data-role="controlgroup" data-mini="true">
+		<div id="div-home-encrypt">
+		<input id="btn-home-encrypt" type="button" data-role="button" data-theme="b" value="Encrypt" />
+		</div>
+		<div id="div-home-decrypt">
+		<input id="btn-home-decrypt" type="button" data-role="button" data-theme="b" value="Decrypt" />
+		</div>
+		</div>
+		<div data-role="controlgroup" data-mini="true">
+		<div id="div-home-delete"><input id="btn-home-delete" type="button" data-role="button" data-theme="b" value="Delete Wallet" /></div>
+		</div>
+		<!-- /tools-message-sign start -->
+		<div id="tools-message-sign" style="display: none;" data-role="controlgroup" data-mini="true">
+        	<h3>Sign</h3>
+		<div id="div-message-message">Message: <input id="txt-message-message" type="text" data-role="text" data-theme="b" value="" /></div>
+		<div id="div-message-sign"><input id="btn-message-sign" type="button" data-role="button" data-theme="b" value="Sign Message" /></div>
+        	<div id="div-message-signature">Signature: <input id="txt-message-signature" type="text" data-role="text" data-theme="b" value="Signature Here" /></div>
+		<!-- <div id="div-copy-clipboard"><input id="btn-message-clipboard" type="button" data-role="button" data-theme="b" value="Copy To Clipboard" /></div> -->
+		</div><!-- /tools-mesage-sign --> 
+        	<div id="tools-message-verify" style="display: none;" data-role="controlgroup" data-mini="true">
+        	<h3>Verify</h3>
+		<div id="div-message-signer">Signer Address: <input id="txt-message-signer" type="text" data-role="text" data-theme="b" valtestue="" /></div>
+        	<div id="div-message-message">Message: <input id="txt-message-message" type="text" data-role="text" data-theme="b" value="" /></div>
+		<div id="div-message-signature">Signature: <input id="txt-message-signature" type="text" data-role="text" data-theme="b" value="Signature Here" /></div>
+		<div id="div-message-verify"><input id="btn-message-verify" type="button" data-role="button" data-theme="b" value="Verify Message" /></div>
+        	</div><!-- /tools-mesage-verify --> 
+        	<div id="tools-message-encrypt" style="display: none;" data-role="controlgroup" data-mini="true">
+        	<h3>Encrypt</h3>
+		<div id="div-message-toaddress">To Address: <input id="txt-message-toaddress" type="text" data-role="text" data-theme="b" valtestue="" /></div>
+        	<div id="div-message-message">Message: <input id="txt-message-message" type="text" data-role="text" data-theme="b" value="" /></div>
+		<div id="div-message-encrypted">Encrypted: <input id="txt-message-encrypted" type="text" data-role="text" data-theme="b" value="" /></div>
+		<div id="div-message-encrypt"><input id="btn-message-encrypt" type="button" data-role="button" data-theme="b" value="Encrypt Message" /></div>
+        	</div><!-- /tools-mesage-encrypt --> 
+        	<div id="tools-message-decrypt" style="display: none;" data-role="controlgroup" data-mini="true">
+        	<h3>Decrypt</h3>
+		<div id="div-message-message">Message: <input id="txt-message-message" type="text" data-role="text" data-theme="b" value="" /></div>
+		<div id="div-message-encrypted">Encrypted: <input id="txt-message-encrypted" type="text" data-role="text" data-theme="b" value="" /></div>
+		<div id="div-message-encrypt"><input id="btn-message-encrypt" type="button" data-role="button" data-theme="b" value="Decrypt Message" /></div>
+        	</div><!-- /tools-mesage-decrypt --> 
+        	</div><!-- /home-content -->
+		</div><!-- /home-page -->
+		
+		<div id="send-page" style="display: none;">
+		<div id="send-content" data-role="content">
+        	<div id="send-content-header"><h3>Send Testnet Bitcoin (BTC)</h3></div>
+        	<div id="div-send-toaddress">Send To Address: <input id="txt-send-toaddress" type="text" data-role="text" data-theme="b" valtestue="" /></div>
+        	<div id="div-send-amount"><div id="div-send-amount-html">BTC Amount: </div><input id="txt-send-btcamount" type="number" step="0.00000001" pattern="[0-9.]*" data-role="text" data-theme="b" valtestue="" value="0.0" /></div>
+        	<div id="div-send-send"><input id="btn-send-send" type="button" data-role="button" data-theme="b" value="Send" /></div>
+		<div id="div-send-qr"><input id="btn-send-qr" type="button" data-role="button" data-theme="b" value="Scan QR Code" /></div>
+		<div id="send-message"></div>
+		</div><!-- /send-content -->
+		</div><!-- /send-page -->
+		
+		<div id="receive-page" style="display: none;">
+		<div id="receive-content" data-role="content">
+        	<div id="receive-content-header"><h3>Receive Testnet Bitcoin (BTC)</h3></div>
+		<div id="receive-address"></div><br>
+        	<div id="receive-qrcode-public" align="center"></div>
+		<div id="receive-private" style="display: none;"></div><br>
+        	<div id="receive-qrcode-private" align="center" style="display: none;"></div>
+		<div data-role="controlgroup" data-mini="true">
+			<div id="div-copy-clipboard"><input id="btn-copy-clipboard" type="button" data-role="button" data-theme="b" value="Copy To Clipboard" /></div>
+        	</div>
+		</div><!-- /receive-content -->
+        	</div><!-- /receive-page -->
+		
+		<div id="settings-page" style="display: none;">
+		<div id="settings-content" data-role="content">
+        	<label for="select-choice-currency" class="select">Select Virtual Currency:</label>
+		<select name="select-choice-currency" id="select-choice-currency">
+		   <option value="BTC">Bitcoin (BTC)</option>
+		   <option value="LTC">Litecoin (LTC)</option>
+		   <option value="PPC">Peercoin (PPC)</option>
+		   <!-- <option value="NMC">Namecoin (NMC)</option> -->
+		</select>
+		<div id="div-checkbox-usetestnet" data-role="fieldcontain">
+		 	<fieldset data-role="controlgroup">
+				<legend>Use testnet blockchain:</legend>
+				<input type="checkbox" name="checkbox-usetestnet" id="checkbox-usetestnet" />
+				<label for="checkbox-usetestnet">Uset testnet</label>
+		    </fieldset>
+		</div>
+        	<div id="div-setup-fee" data-role="fieldcontain">
+Transaction Fee: <input id="txt-fee" type="number" step="0.00000001" data-role="text" data-theme="b" value="" />	
+		</div>
+        	</div><!-- /settings-content -->        	
+		</div><!-- /tools-page -->
+		
+		<div id="about-page" style="display: none;">
+		<div id="about-content" data-role="content">
+        	<h2>Rosie Wallet Test App</h2>
+        	<p>This application exercises the primary functions of the Rivetz Trusted Execution Applet. For documentation on
+        	how to integrate with these features see <a href="http://rivetz.com/sdk">http://rivetz.com/sdk</a>
+        	<p>Please note that Bitcoin related calls are intended for test purposes only and not to store true value.
+        	<h2>Contact</h2>
+        	<p><a href="mailto:info@rivetz.com">info@rivetz.com</a>
+        	</div><!-- /content -->
+		</div><!-- /about-page -->
+		
+        </div><!-- /content -->
+        
+        <div data-role="footer" data-position="fixed" data-theme="c">
+        	<div data-role="navbar">
+        		<ul>
+				<li><a href="#" data-icon="home" id="nav-home-page">home</a>
+				<li><a href="#" data-icon="arrow-r" id="nav-send-page">send</a>
+				<li><a href="#" data-icon="arrow-l" id="nav-receive-page">receive</a>
+				<li><a href="#" data-icon="gear" id="nav-settings-page">settings</a>
+				<li><a href="#" class="userHandle" data-icon="info" id="nav-about-page">about</a>
+        		</ul>
+        	</div>
+        </div><!-- /footer --> 
+	</div>
+	
+	
+		
+		
+</body>
+</html>
