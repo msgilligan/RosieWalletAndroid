@@ -126,6 +126,10 @@ public class MainActivity extends Activity {
 			MessageBox("No Address specified.");
 			return;
 		}
+		if (spending.size()>0) {
+			MessageBox("Spend coin already queued.  Please wait until spend coin result is received.");
+			return;
+		}
 		if ((new String(oldvc).equals(vc)) == false) {
 			LoadWallet(vc);
 		}
@@ -147,6 +151,7 @@ public class MainActivity extends Activity {
 				int transactions = jArr.length();
 				JSONObject jsonSendObj = new JSONObject();
 				JSONArray jsonSendArr = new JSONArray();
+				spending = new ArrayList<String>();
 				for (int i = 0; i < transactions; i++) {
 					JSONObject trans = (JSONObject)jArr.get(i);
 					String tx = (String)trans.get("tx");
@@ -320,6 +325,7 @@ public class MainActivity extends Activity {
 				else {
 					ToastIt("Transaction Returned Error: "+result);
 				}
+				spending = new ArrayList<String>();
 			}
 		}
 	}
