@@ -17,6 +17,6 @@ public class Rivet {
 	public static final String EXTRA_AMT = "AMT";
 	public static final String EXTRA_FEE = "FEE";
 	public static final String EXTRA_TRANS = "TRANS";
-	
+	public static final String EXTRA_SIGNED = "SignedTrans";
 }
 

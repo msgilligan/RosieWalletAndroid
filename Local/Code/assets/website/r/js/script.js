@@ -110,11 +110,13 @@ $(document).ready(function() {
 	});
 	$("#txt-fee").change(function() {
 		try {
-			fee = parseFloat($(this).val());
+			//alert("text-fee changed");
+			newfee = parseFloat($(this).val());
+			//alert("newfee "+newfee);
 			bigfee = newfee*100000000;
-			alert("fee="+fee+" bigfee="+bigfee);
+			//alert("bigfee="+bigfee);
 			AndroidHost.bitcoinSaveFee(vc,bigfee);
-			
+			LoadFee();
 		} catch(e) {}
 	});
 	$("#nav-about-page").click(function() {

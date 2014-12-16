@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.BufferedInputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -48,6 +50,9 @@ import android.webkit.WebChromeClient;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class MainActivity extends Activity {
 
 	private WebView webView;
@@ -64,6 +69,8 @@ public class MainActivity extends Activity {
 	private double Balance1Confirm = 0;
 	private double Balance0Confirm = 0;
 	private String UnspentList = "";
+	private ArrayList<String> spent = new ArrayList<String>();
+	private ArrayList<String> spending = new ArrayList<String>();
 	private long fee = 0;
 	private MyWebRequestReceiver receiver;
 	String scanResult = "";
@@ -109,79 +116,93 @@ public class MainActivity extends Activity {
 		return Retval;
 	}
 	public void sendcoin(String vc, String Address, String Amount) {
-		String SendTrans = "";
-		boolean FirstTime = true;
-		if (UnspentList=="") return;
 		if (!IsValidVC(vc)) return;
+		String SendTrans = "";
+		if (new String("").equals(UnspentList)) {
+			MessageBox("No inputs to spend.  Your balance is zero.");
+			return;
+		}
+		if (new String("").equals(Address)) {
+			MessageBox("No Address specified.");
+			return;
+		}
 		if ((new String(oldvc).equals(vc)) == false) {
 			LoadWallet(vc);
 		}
 		try {
-			Double TotalSpend = Double.parseDouble(Amount);
+			Double TotalSpend = round(Double.parseDouble(Amount),8);
+			if (TotalSpend<=0.00) {
+				MessageBox("Amount must be set correctly.");
+				return;
+			}
 			Double AmtDue = TotalSpend;
-			if (new String("TBTC").equals(vc)) {
-			}
-			else {
-				AmtDue += fee;
-			}
+			Double AmtFee = round(fee / 100000000.00,8);
+			AmtDue += AmtFee;
 			Double change = 0.00;
-			ArrayList<String> ar = new ArrayList<String>();
-			String[] UnSpentArr = UnspentList.split(",");
-			for(int i=0; i<UnSpentArr.length; i++) {
-				String[] UnSpentRow = UnSpentArr[i].split("&");
-				Double b = 0.00;
-				int txconfirms = -1;
-				boolean isduplicate = false;
-				int n = -1;
-				String script = "";
-				String tx = "";
-				for(int y=0; y<UnSpentRow.length; y++) {
-					String[] UnSpentField = UnSpentRow[y].split("=");
-					if (UnSpentField.length==2) {
-						if (new String("tx").equals(UnSpentField[0])) {
-							tx = UnSpentField[1];
-							if (ar.indexOf(UnSpentField[1])==-1)
-								ar.add(UnSpentField[1]);
-							else
-								isduplicate=true;
-						}
-						else if (new String("amt").equals(UnSpentField[0])) {
-							b = Double.parseDouble(UnSpentField[1]);
-						}
-						else if (new String("n").equals(UnSpentField[0])) {
-							n = Integer.parseInt(UnSpentField[1]);
-						}
-						else if (new String("confirms").equals(UnSpentField[0])) {
-							txconfirms = Integer.parseInt(UnSpentField[1]);
-						}
-						else if (new String("script").equals(UnSpentField[0])) {
-							script = UnSpentField[1];
-						}
-						else {
+			Double amtspendable = 0.00;
+			try {
+				ArrayList<String> ar = new ArrayList<String>();
+				JSONObject jObj = new JSONObject(UnspentList);
+				JSONArray jArr = jObj.getJSONArray("unspent");
+				int transactions = jArr.length();
+				JSONObject jsonSendObj = new JSONObject();
+				JSONArray jsonSendArr = new JSONArray();
+				for (int i = 0; i < transactions; i++) {
+					JSONObject trans = (JSONObject)jArr.get(i);
+					String tx = (String)trans.get("tx");
+					Double amt = round(Double.parseDouble((String)trans.get("amount")),8);
+					DecimalFormat df = new DecimalFormat("0.00000000");
+					String amtstr = df.format(amt);
+					int n = (Integer)trans.get("n");
+					int confirmations = (Integer)trans.get("confirmations");
+					String script = (String)trans.get("script");
+					String txcombo = tx + "-" + Integer.toString(n);
+					if (confirmations > 0 && spent.indexOf(txcombo)==-1) {
+						if (ar.indexOf(txcombo)==-1) { // ignore duplicate
+							ar.add(txcombo);
+							amtspendable += amt;
+							if (AmtDue>0) {
+								if (AmtDue - amt < 0) {
+									change = amt - AmtDue;
+									AmtDue = 0.00;
+								}
+								else AmtDue -= amt;
+								JSONObject txObj = new JSONObject();
+								txObj.put("tx", tx);
+								txObj.put("amount", amtstr);
+								txObj.put("n", n);
+								txObj.put("confirmations", confirmations);
+								txObj.put("script", script);
+								jsonSendArr.put(txObj);
+								if (spending.indexOf(txcombo)==-1) spending.add(txcombo);
+							}
 						}
 					}
 				}
-				if (isduplicate==false && txconfirms>0 && AmtDue>0) {
-					if (AmtDue - b < 0) {
-						change = b - AmtDue;
-						AmtDue = 0.00;
-					}
-					else AmtDue -= b;
-					if (FirstTime) FirstTime = false;
-					else SendTrans+=",";
-					SendTrans += UnSpentArr[i];
-				}
+				jsonSendObj.put("unspent", jsonSendArr);
+				SendTrans = jsonSendObj.toString();
+			} catch(Exception e) {
 			}
-			if (AmtDue>0) MessageBox("Balance too low for transaction.");
+			DecimalFormat df = new DecimalFormat("0.00000000");
+			String amtspend = df.format(TotalSpend);
+			String amtfee = df.format(AmtFee);
+			String amttotal = df.format(TotalSpend+AmtFee);
+			String amtavail = df.format(amtspendable);
+			if (AmtDue>0) {
+				MessageBox("Balance too low for transaction.\n"+
+						"    Spend Amount: "+amtspend+"\n"+
+						"      Fee Amount: "+amtfee+"\n"+
+						"    Total Amount: "+amttotal+"\n"+
+						"Amount Available: "+amtavail+"\n"+
+						(GotBalanceUC && Balance0Confirm != 0.00 ? "You have an unconfirmed balance.  Please wait until this balance is confirmed." : "" ));
+			}
 			else {
-				DecimalFormat df = new DecimalFormat("0.00000000");
-				String ToSpendStr = df.format(TotalSpend);
-				SendCoinRivet(vc,PublicAddress,PrivateKey,Address,ToSpendStr,SendTrans);
+				SendCoinRivet(vc,PublicAddress,PrivateKey,Address,amtspend,amtfee,SendTrans);
 			}
 		}
 		catch(NumberFormatException e) {}
 	}
-	public void SendCoinRivet(String vc,String PUB,String PRV,String TOPUB,String AMT,String TRANS) {
+	public void SendCoinRivet(String vc,String PUB,String PRV,String TOPUB,String AMT,String FEE,String TRANS) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_SIGNTRANS)
@@ -190,7 +211,7 @@ public class MainActivity extends Activity {
 			.putExtra(Rivet.EXTRA_PRV, PRV)
 			.putExtra(Rivet.EXTRA_TOPUB, TOPUB)
 			.putExtra(Rivet.EXTRA_AMT, AMT)
-			.putExtra(Rivet.EXTRA_FEE,fee)
+			.putExtra(Rivet.EXTRA_FEE, FEE)
 			.putExtra(Rivet.EXTRA_TRANS, TRANS);
 		if (intent.resolveActivity(getPackageManager()) != null) {
 			startActivityForResult(intent,Rivet.REQUEST_SIGNTRANS);
@@ -203,11 +224,11 @@ public class MainActivity extends Activity {
 			if (LoadWallet("TBTC")) LoadWebpage("main.html");
 		}
 		if (requestCode == Rivet.REQUEST_SIGNTRANS && resultCode == RESULT_OK) { // Get New Wallet
-			String SignedTrans = data.getStringExtra("SignedTrans");
+			String SignedTrans = data.getStringExtra(Rivet.EXTRA_SIGNED);
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
 			String AMT = data.getStringExtra(Rivet.EXTRA_AMT);
 			String TOPUB = data.getStringExtra(Rivet.EXTRA_TOPUB);
-			String urlstr = "http://rosieswallet.com/api-coin-v1/sendtrans.cgi.php?coin="+ vc +"&trans=" + SignedTrans;
+			String urlstr = "http://rosieswallet.com/api-coin-v1/sendtrans.php?coin="+ vc +"&trans=" + SignedTrans;
 			Intent intentd = new Intent(this, GetBalance.class)
 				.putExtra(GetBalance.VC,vc)
 				.putExtra(GetBalance.TYPE,"send")
@@ -246,72 +267,55 @@ public class MainActivity extends Activity {
 			String confirms = intent.getStringExtra(GetBalance.CONFIRMS);
 			String vc = intent.getStringExtra(GetBalance.VC);
 			String type = intent.getStringExtra(GetBalance.TYPE);
-			if (new String("balance").equals(type)) {
+			if (new String("unspent").equals(type)) {
 				if (new String(vc).equals(oldvc)) {
+					UnspentList = result;
 					try {
-						if (new String("-1").equals(confirms)) {
-							Double amt0 = 0.00;
-							Double amt1 = 0.00;
-							ArrayList<String> ar = new ArrayList<String>();
-							UnspentList = result;
-							String[] UnSpentArr = UnspentList.split(",");
-							for(int i=0; i<UnSpentArr.length; i++) {
-								String[] UnSpentRow = UnSpentArr[i].split("&");
-								Double b = 0.00;
-								int txconfirms = -1;
-								boolean isduplicate = false;
-								for(int y=0; y<UnSpentRow.length; y++) {
-									String[] UnSpentField = UnSpentRow[y].split("=");
-									if (UnSpentField.length==2) {
-										if (new String("tx").equals(UnSpentField[0])) {
-											if (ar.indexOf(UnSpentField[1])==-1)
-												ar.add(UnSpentField[1]);
-											else
-												isduplicate=true;
-										}
-										else if (new String("amt").equals(UnSpentField[0])) {
-											b = Double.parseDouble(UnSpentField[1]);
-										}
-										else if (new String("n").equals(UnSpentField[0])) {
-										}
-										else if (new String("confirms").equals(UnSpentField[0])) {
-											txconfirms = Integer.parseInt(UnSpentField[1]);
-										}
-										else if (new String("script").equals(UnSpentField[0])) {
-										}
-										else {
-										}
-									}
-								}
-								if (isduplicate==false) {
-									if (txconfirms==0) amt0 += b;
-									else if (txconfirms>0) amt1 += b;
+						ArrayList<String> ar = new ArrayList<String>();
+						Double amt0 = 0.00;
+						Double amt1 = 0.00;
+						JSONObject jObj = new JSONObject(result);
+						JSONArray jArr = jObj.getJSONArray("unspent");
+						int transactions = jArr.length();
+						for (int i = 0; i < transactions; i++) {
+							JSONObject trans = (JSONObject)jArr.get(i);
+							String tx = (String)trans.get("tx");
+							Double amt = round(Double.parseDouble((String)trans.get("amount")),8);
+							DecimalFormat df = new DecimalFormat("0.00000000");
+							String amtstr = df.format(amt);
+							int n = (Integer)trans.get("n");
+							int confirmations = (Integer)trans.get("confirmations");
+							String script = (String)trans.get("script");
+							String txcombo = tx + "-" + Integer.toString(n);
+							if (confirmations > 0) {
+								if (ar.indexOf(txcombo)==-1) { // ignore duplicate tx
+									ar.add(txcombo);
+									amt1 += amt;
 								}
 							}
-							Balance0Confirm = amt0;
-							Balance1Confirm = amt1;
-							GotBalanceList = true;
-							GotBalanceUC = true;
-							GotBalance = true;
+							else {
+								// TODO is transaction a change? if so then do not incr
+								amt0 += amt;
+							}
 						}
-						if (new String("0").equals(confirms)) {
-							Balance0Confirm = Double.parseDouble(result) - Balance1Confirm;
-							GotBalanceUC = true;
-						}
-						else {
-							Balance1Confirm = Double.parseDouble(result);
-							GotBalance = true;
-						}
-					}
-					catch(NumberFormatException e) {
-						
+						Balance0Confirm = amt0;
+						Balance1Confirm = amt1;
+						GotBalanceList = true;
+						GotBalanceUC = true;
+						GotBalance = true;
+		
+					} catch(Exception e) {
 					}
 				}
 			}
 			else if (new String("send").equals(type)) {
 				if (new String("OK").equals(result)) {
 					if (new String(vc).equals(oldvc)) GetBalanceStart(vc);
+					// TODO add transaction to recent transaction list
 					ToastIt("Transaction Sent Successfully");
+					for (String tx : spending) {
+						if (spent.indexOf(tx)==-1) spent.add(tx);
+					}
 				}
 				else {
 					ToastIt("Transaction Returned Error: "+result);
@@ -380,30 +384,16 @@ public class MainActivity extends Activity {
 	}
 	public void GetBalanceStart(String vc) {
 		if (!IsValidVC(vc)) return;
-		GetBalanceStartList(vc);
+		GetUnspentStart(vc);
 	}
-	public void GetBalanceStartList(String vc) {
+	public void GetUnspentStart(String vc) {
 		if (!IsValidVC(vc)) return;
-		Intent intentd = new Intent(this, GetBalance.class);
-		intentd.putExtra("confirms", "-1");
-		intentd.putExtra("vc",vc);
-		intentd.putExtra("type","balance");
-		String urlstr = "http://rosieswallet.com/api-coin-v1/getbalance.cgi.php?coin="+ vc +"&listall=true&address=" + PublicAddress + "&confirmations=0";
-		intentd.putExtra(GetBalance.URL, urlstr);
-		startService(intentd);
-		
-	}
-	public void GetBalanceStartConfirm(String vc,int confirms) {
-		if (!IsValidVC(vc)) return;
-		String confirm = Integer.toString(confirms);
-		String urlstr = "http://rosieswallet.com/api-coin-v1/getbalance.cgi.php?coin="+ vc +"&address=" + PublicAddress + "&confirmations=" + confirm ;
+		String urlstr = "http://rosieswallet.com/api-coin-v1/unspent.php?coin="+ vc +"&address=" + PublicAddress;
 		Intent intentd = new Intent(this, GetBalance.class)
-			.putExtra(GetBalance.CONFIRMS, confirm)
-			.putExtra(GetBalance.VC,vc)
-			.putExtra(GetBalance.TYPE,"balanceonly")
+			.putExtra(GetBalance.VC, vc)
+			.putExtra(GetBalance.TYPE, "unspent")
 			.putExtra(GetBalance.URL, urlstr);
 		startService(intentd);
-		
 	}
 	public String GetBalanceAddressNew(String vc) {
 		DecimalFormat df = new DecimalFormat("0.00000000");
@@ -624,5 +614,11 @@ public class MainActivity extends Activity {
                 Log.d(Constants.LOG_TAG, "GenerateNWd "+vc);
 		String cipherText = "";
 		return  cipherText;
+	}
+	public static double round(double value, int places) {
+		if (places < 0) throw new IllegalArgumentException();
+		BigDecimal bd = new BigDecimal(value);
+		bd = bd.setScale(places, RoundingMode.HALF_UP);
+		return bd.doubleValue();
 	}
 }
