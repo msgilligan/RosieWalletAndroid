@@ -267,9 +267,9 @@ $(document).ready(function() {
 		displayAddress();
 		buildQRCode();
 		DisplayWallet();
-		$("#send-content-header").html('<h3>Send ' + GetVCName(vc) + ' (' + filterTEST(vc) + ')</h3>');
-		$("#receive-content-header").html('<h3>Receive ' + GetVCName(vc) + ' (' + filterTEST(vc) + ')</h3>');
-		$("#home-content-header").html('<h3>Rosie Wallet ' + GetVCName(vc) + ' Test App</h3>');
+		// $("#send-content-header").html('<h3>Send ' + GetVCName(vc) + ' (' + filterTEST(vc) + ')</h3>');
+		// $("#receive-content-header").html('<h3>Receive ' + GetVCName(vc) + ' (' + filterTEST(vc) + ')</h3>');
+		// $("#home-content-header").html('<h3>Rosie Wallet ' + GetVCName(vc) + ' Test App</h3>');
 		if (filterTEST(vc) == "BTC") {
 			$("#checkbox-usetestnet").attr("checked",usetestnet).checkboxradio("refresh");
 			$("#div-checkbox-usetestnet").show();
