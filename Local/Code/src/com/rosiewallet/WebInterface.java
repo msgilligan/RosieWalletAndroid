@@ -31,6 +31,7 @@ public class WebInterface {
 			try {
 				ClipboardManager clipboard = (ClipboardManager) mContext.getSystemService(mContext.CLIPBOARD_SERVICE);
 				clipboard.setText(text);
+				((MainActivity)mContext).ToastIt("Copied to clipboard");
 			} catch (Exception e) {
 				
 			}

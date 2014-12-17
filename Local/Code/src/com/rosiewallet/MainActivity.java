@@ -256,8 +256,7 @@ public class MainActivity extends Activity {
 		}
 	}
 	public void ToastIt(String message) {
-		Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-		
+		Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
 	}
 	@Override
 	public void onDestroy() {
