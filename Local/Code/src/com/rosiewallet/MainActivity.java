@@ -87,7 +87,7 @@ public class MainActivity extends Activity {
 		webView.getSettings().setJavaScriptEnabled(true);
 		webView.setWebChromeClient(new WebChromeClient());
 		webView.addJavascriptInterface(new WebInterface(this), "AndroidHost");
-		if (!LoadWallet("TBTC")) {
+		if (LoadWallet("TBTC")) {
 			
 		}
 		if (savedInstanceState == null) {
@@ -141,7 +141,7 @@ public class MainActivity extends Activity {
 			}
 			Double AmtDue = TotalSpend;
 			Double AmtFee = round(fee / 100000000.00,8);
-			AmtDue += AmtFee;
+			AmtDue = round(AmtDue + AmtFee,8);
 			Double change = 0.00;
 			Double amtspendable = 0.00;
 			try {
@@ -163,15 +163,15 @@ public class MainActivity extends Activity {
 					String script = (String)trans.get("script");
 					String txcombo = tx + "-" + Integer.toString(n);
 					if (confirmations > 0 && spent.indexOf(txcombo)==-1) {
-						if (ar.indexOf(txcombo)==-1) { // ignore duplicate
+						if (ar.indexOf(txcombo)==-1) {
 							ar.add(txcombo);
 							amtspendable += amt;
 							if (AmtDue>0) {
-								if (AmtDue - amt < 0) {
-									change = amt - AmtDue;
+								if (round(AmtDue - amt,8) < 0) {
+									change = round(amt - AmtDue, 8);
 									AmtDue = 0.00;
 								}
-								else AmtDue -= amt;
+								else AmtDue = round(AmtDue - amt, 8);
 								JSONObject txObj = new JSONObject();
 								txObj.put("tx", tx);
 								txObj.put("amount", amtstr);
@@ -277,6 +277,7 @@ public class MainActivity extends Activity {
 					UnspentList = result;
 					try {
 						ArrayList<String> ar = new ArrayList<String>();
+						ArrayList<String> alltrans = new ArrayList<String>();
 						Double amt0 = 0.00;
 						Double amt1 = 0.00;
 						JSONObject jObj = new JSONObject(result);
@@ -292,6 +293,7 @@ public class MainActivity extends Activity {
 							int confirmations = (Integer)trans.get("confirmations");
 							String script = (String)trans.get("script");
 							String txcombo = tx + "-" + Integer.toString(n);
+							if (alltrans.indexOf(txcombo)==-1) alltrans.add(txcombo);
 							if (confirmations > 0) {
 								if (ar.indexOf(txcombo)==-1) { // ignore duplicate tx
 									ar.add(txcombo);
@@ -308,7 +310,15 @@ public class MainActivity extends Activity {
 						GotBalanceList = true;
 						GotBalanceUC = true;
 						GotBalance = true;
-		
+						boolean RemovedOne = false;
+						for (int j = spent.size()-1; j >= 0; j--) {
+							String tx = spent.get(j);
+							if (alltrans.indexOf(tx)==-1) {
+								spent.remove(tx);
+								RemovedOne = true;
+							}
+						}
+						if (RemovedOne) SaveTrans(vc);
 					} catch(Exception e) {
 					}
 				}
@@ -321,6 +331,7 @@ public class MainActivity extends Activity {
 					for (String tx : spending) {
 						if (spent.indexOf(tx)==-1) spent.add(tx);
 					}
+					SaveTrans(vc);
 				}
 				else {
 					ToastIt("Transaction Returned Error: "+result);
@@ -381,7 +392,7 @@ public class MainActivity extends Activity {
 	}
 	public void LoadWebpage(String htmlfile) {
 		mainhtml = LoadData("website/"+htmlfile);
-		webView.loadDataWithBaseURL("fake://not/needed",
+		webView.loadDataWithBaseURL("file:///android_asset/",
 				mainhtml,"text/html", "UTF-8",null);
 	}
 	private String convertStreamToString(java.io.InputStream is) {
@@ -436,27 +447,62 @@ public class MainActivity extends Activity {
 		else if (new String("BTC").equals(vc)) defaultval =    10000L;
 		else if (new String("LTC").equals(vc)) defaultval =   100000L;
 		else if (new String("PPC").equals(vc)) defaultval =  1000000L;
-		String Key1 = new StringBuilder()
+		String Key = new StringBuilder()
 					.append(vc)
 					.append("-Fee")
 					.toString();
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-		retval = settings.getLong(Key1, defaultval);
+		retval = settings.getLong(Key, defaultval);
 		return retval;
 	}
 	public void SaveFee(String vc,long newfee) {
 		if (!IsValidVC(vc)) return;
 		if (newfee<0) return;
 		if (oldvc == vc) fee = newfee;
-		String Key1 = new StringBuilder()
+		String Key = new StringBuilder()
 					.append(vc)
 					.append("-Fee")
 					.toString();
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor editor = settings.edit();
-		editor.putLong(Key1, newfee);
+		editor.putLong(Key, newfee);
 		editor.apply();
 		editor.commit();
+	}
+	private void LoadTrans(String vc) {
+		if (!IsValidVC(vc)) return;
+		String Key = new StringBuilder()
+					.append("spent")
+					.append(vc)
+					.toString();
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		String spentlist = settings.getString(Key, "");
+		// MessageBox(vc+" loadtrans="+spentlist);
+		String[] list = spentlist.split(",");
+		spent = new ArrayList<String>();
+		for (int i = 0; i < list.length; i++) {
+			if (new String("").equals(list[i]) == false) {
+				spent.add(list[i]);
+			}
+		}
+	}
+	private void SaveTrans(String vc) {
+		if (!IsValidVC(vc)) return;
+		String Key = new StringBuilder()
+					.append("spent")
+					.append(vc)
+					.toString();
+		StringBuilder sb = new StringBuilder();
+		for (String tx : spent) sb.append(tx).append(",");
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putString(Key, sb.toString());
+		editor.apply();
+		editor.commit();
+		// MessageBox(vc+" savetrans="+sb.toString());
+		// sb = new StringBuilder();
+		// for (String tx : spending) sb.append(tx).append(",");
+		// editor.putString("spending", sb.toString());
 	}
 	private void SaveWallet(String vc) {
 		if (!IsValidVC(vc)) return;
@@ -558,6 +604,7 @@ public class MainActivity extends Activity {
 		Balance1Confirm = 0;
 		if (PublicAddress == "" || PrivateKey == "") return false;
 		fee = LoadFee(vc);
+		LoadTrans(vc);
 		return true;
 	}
 	public String LoadRawData(int resID) {
