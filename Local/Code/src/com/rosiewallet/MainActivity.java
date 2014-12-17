@@ -300,7 +300,6 @@ public class MainActivity extends Activity {
 								}
 							}
 							else {
-								// TODO is transaction a change? if so then do not incr
 								amt0 += amt;
 							}
 						}
@@ -325,7 +324,6 @@ public class MainActivity extends Activity {
 			else if (new String("send").equals(type)) {
 				if (new String("OK").equals(result)) {
 					if (new String(vc).equals(oldvc)) GetBalanceStart(vc);
-					// TODO add transaction to recent transaction list
 					ToastIt("Transaction Sent Successfully");
 					for (String tx : spending) {
 						if (spent.indexOf(tx)==-1) spent.add(tx);
@@ -476,7 +474,6 @@ public class MainActivity extends Activity {
 					.toString();
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 		String spentlist = settings.getString(Key, "");
-		// MessageBox(vc+" loadtrans="+spentlist);
 		String[] list = spentlist.split(",");
 		spent = new ArrayList<String>();
 		for (int i = 0; i < list.length; i++) {
@@ -498,10 +495,6 @@ public class MainActivity extends Activity {
 		editor.putString(Key, sb.toString());
 		editor.apply();
 		editor.commit();
-		// MessageBox(vc+" savetrans="+sb.toString());
-		// sb = new StringBuilder();
-		// for (String tx : spending) sb.append(tx).append(",");
-		// editor.putString("spending", sb.toString());
 	}
 	private void SaveWallet(String vc) {
 		if (!IsValidVC(vc)) return;
