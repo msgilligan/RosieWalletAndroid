@@ -12,6 +12,7 @@ import java.net.URL;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
+import java.lang.Thread;
 import java.util.ArrayList;
 
 import android.app.Activity;
@@ -57,27 +58,16 @@ public class MainActivity extends Activity {
 
 	private WebView webView;
 	private static final String TAG = MainActivity.class.getSimpleName();
-	private Activity activity=this;
-	private String mainhtml = null;
-	private String PublicAddress = null;
-	private String PrivateKey = null;
-	private String oldvc = new String("TBTC");
-	private static final String PREFS_BTC = "BTC_PREFS";
-	private boolean GotBalance = false;
-	private boolean GotBalanceUC = false;
-	private boolean GotBalanceList = false;
-	private double Balance1Confirm = 0;
-	private double Balance0Confirm = 0;
-	private String UnspentList = "";
-	private ArrayList<String> spent = new ArrayList<String>();
-	private ArrayList<String> spending = new ArrayList<String>();
-	private long fee = 0;
 	private MyWebRequestReceiver receiver;
 	String scanResult = "";
+	private VirtualCoin[] VCArray = new VirtualCoin[4];
+	private String CurrentVC = new String("TBTC");
+	private boolean MovingWallet = false;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		InitWallets();
 		IntentFilter filter = new IntentFilter(MyWebRequestReceiver.PROCESS_RESPONSE);
 		filter.addCategory(Intent.CATEGORY_DEFAULT);
 	        receiver = new MyWebRequestReceiver();
@@ -87,12 +77,30 @@ public class MainActivity extends Activity {
 		webView.getSettings().setJavaScriptEnabled(true);
 		webView.setWebChromeClient(new WebChromeClient());
 		webView.addJavascriptInterface(new WebInterface(this), "AndroidHost");
-		if (LoadWallet("TBTC")) {
-			
-		}
+		MoveOldKeys();
+		if (!MovingWallet) LoadWallets();
 		if (savedInstanceState == null) {
 			LoadWebpage("main.html");
 		}
+	}
+	private void InitWallets() {	
+		VCArray[VCIndex("TBTC")] = new VirtualCoin();
+		VCArray[VCIndex("BTC")] = new VirtualCoin();
+		VCArray[VCIndex("LTC")] = new VirtualCoin();
+		VCArray[VCIndex("PPC")] = new VirtualCoin();
+	}
+	private void LoadWallets() {
+		ToastIt("Loading Wallets");
+		GetKey("TBTC");
+		GetKey("BTC");
+		GetKey("LTC");
+		GetKey("PPC");
+	}
+	private void MoveOldKeys() {
+		if (LocalWalletLoad("TBTC")) GetPublicKey("TBTC");
+		if (LocalWalletLoad("BTC"))  GetPublicKey("BTC");
+		if (LocalWalletLoad("LTC"))  GetPublicKey("LTC");
+		if (LocalWalletLoad("PPC"))  GetPublicKey("PPC");
 	}
 	public void ScanQRCode() {
 		try {
@@ -117,8 +125,9 @@ public class MainActivity extends Activity {
 	}
 	public void sendcoin(String vc, String Address, String Amount) {
 		if (!IsValidVC(vc)) return;
+		if (!VCArray[VCIndex(vc)].Loaded) return;
 		String SendTrans = "";
-		if (new String("").equals(UnspentList)) {
+		if (new String("").equals(VCArray[VCIndex(vc)].UnspentList)) {
 			MessageBox("No inputs to spend.  Your balance is zero.");
 			return;
 		}
@@ -126,12 +135,9 @@ public class MainActivity extends Activity {
 			MessageBox("No Address specified.");
 			return;
 		}
-		if (spending.size()>0) {
+		if (VCArray[VCIndex(vc)].spending.size()>0) {
 			MessageBox("Spend coin already queued.  Please wait until spend coin result is received.");
 			return;
-		}
-		if ((new String(oldvc).equals(vc)) == false) {
-			LoadWallet(vc);
 		}
 		try {
 			Double TotalSpend = round(Double.parseDouble(Amount),8);
@@ -140,18 +146,18 @@ public class MainActivity extends Activity {
 				return;
 			}
 			Double AmtDue = TotalSpend;
-			Double AmtFee = round(fee / 100000000.00,8);
+			Double AmtFee = round(VCArray[VCIndex(vc)].fee / 100000000.00,8);
 			AmtDue = round(AmtDue + AmtFee,8);
 			Double change = 0.00;
 			Double amtspendable = 0.00;
 			try {
 				ArrayList<String> ar = new ArrayList<String>();
-				JSONObject jObj = new JSONObject(UnspentList);
+				JSONObject jObj = new JSONObject(VCArray[VCIndex(vc)].UnspentList);
 				JSONArray jArr = jObj.getJSONArray("unspent");
 				int transactions = jArr.length();
 				JSONObject jsonSendObj = new JSONObject();
 				JSONArray jsonSendArr = new JSONArray();
-				spending = new ArrayList<String>();
+				VCArray[VCIndex(vc)].spending = new ArrayList<String>();
 				for (int i = 0; i < transactions; i++) {
 					JSONObject trans = (JSONObject)jArr.get(i);
 					String tx = (String)trans.get("tx");
@@ -162,7 +168,7 @@ public class MainActivity extends Activity {
 					int confirmations = (Integer)trans.get("confirmations");
 					String script = (String)trans.get("script");
 					String txcombo = tx + "-" + Integer.toString(n);
-					if (confirmations > 0 && spent.indexOf(txcombo)==-1) {
+					if (confirmations > 0 && VCArray[VCIndex(vc)].spent.indexOf(txcombo)==-1) {
 						if (ar.indexOf(txcombo)==-1) {
 							ar.add(txcombo);
 							amtspendable += amt;
@@ -179,7 +185,8 @@ public class MainActivity extends Activity {
 								txObj.put("confirmations", confirmations);
 								txObj.put("script", script);
 								jsonSendArr.put(txObj);
-								if (spending.indexOf(txcombo)==-1) spending.add(txcombo);
+								if (VCArray[VCIndex(vc)].spending.indexOf(txcombo)==-1)
+									VCArray[VCIndex(vc)].spending.add(txcombo);
 							}
 						}
 					}
@@ -199,56 +206,93 @@ public class MainActivity extends Activity {
 						"      Fee Amount: "+amtfee+"\n"+
 						"    Total Amount: "+amttotal+"\n"+
 						"Amount Available: "+amtavail+"\n"+
-						(GotBalanceUC && Balance0Confirm != 0.00 ? "You have an unconfirmed balance.  Please wait until this balance is confirmed." : "" ));
+						(VCArray[VCIndex(vc)].GotBalanceUC && VCArray[VCIndex(vc)].Balance0Confirm != 0.00 ? "You have an unconfirmed balance.  Please wait until this balance is confirmed." : "" ));
 			}
 			else {
-				SendCoinRivet(vc,PublicAddress,PrivateKey,Address,amtspend,amtfee,SendTrans);
+				SendCoinRivet(vc,Address,amtspend,amtfee,SendTrans);
 			}
 		}
 		catch(NumberFormatException e) {}
 	}
-	public void SendCoinRivet(String vc,String PUB,String PRV,String TOPUB,String AMT,String FEE,String TRANS) {
+	public void SendCoinRivet(String vc,String TOPUB,String AMT,String FEE,String TRANS) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_SIGNTRANS)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_VC_SIGNTRANS)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_VC, vc)
-			.putExtra(Rivet.EXTRA_PUB, PUB)
-			.putExtra(Rivet.EXTRA_PRV, PRV)
 			.putExtra(Rivet.EXTRA_TOPUB, TOPUB)
 			.putExtra(Rivet.EXTRA_AMT, AMT)
 			.putExtra(Rivet.EXTRA_FEE, FEE)
 			.putExtra(Rivet.EXTRA_TRANS, TRANS);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_SIGNTRANS);
+			startActivityForResult(intent,Rivet.REQUEST_VC_SIGNTRANS);
 		}
 	}
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		if (requestCode == Rivet.REQUEST_DELETEWALLET && resultCode == RESULT_OK) { // Delete Wallet
-			if (LoadWallet("TBTC")) LoadWebpage("main.html");
-		}
-		if (requestCode == Rivet.REQUEST_SIGNTRANS && resultCode == RESULT_OK) { // Get New Wallet
-			String SignedTrans = data.getStringExtra(Rivet.EXTRA_SIGNED);
+		if (requestCode == Rivet.REQUEST_ECDSA_CREATE && resultCode == RESULT_OK) { // Create Wallet
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
-			String AMT = data.getStringExtra(Rivet.EXTRA_AMT);
-			String TOPUB = data.getStringExtra(Rivet.EXTRA_TOPUB);
+			String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
+			String VCADDRESS = data.getStringExtra(Rivet.EXTRA_VC_PUBADDR);
+			if (new String("").equals(PUBLICDATA) == false ) {
+				VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
+				VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
+				VCArray[VCIndex(vc)].GotBalance = false;
+				VCArray[VCIndex(vc)].GotBalanceUC = false;
+				VCArray[VCIndex(vc)].GotBalanceList = false;
+				VCArray[VCIndex(vc)].Balance0Confirm = 0;
+				VCArray[VCIndex(vc)].Balance1Confirm = 0;
+				VCArray[VCIndex(vc)].fee = LoadFee(vc);
+				VCArray[VCIndex(vc)].Loaded = true;
+				LoadWebpage("main.html");
+			}
+			else ToastIt("Blank returned from create");
+		}
+		else if (requestCode == Rivet.REQUEST_GETKEY && resultCode == RESULT_OK) { // Got Wallet
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
+			String VCADDRESS = data.getStringExtra(Rivet.EXTRA_VC_PUBADDR);
+			if (new String("").equals(PUBLICDATA) == false ) {
+				VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
+				VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
+				VCArray[VCIndex(vc)].GotBalance = false;
+				VCArray[VCIndex(vc)].GotBalanceUC = false;
+				VCArray[VCIndex(vc)].GotBalanceList = false;
+				VCArray[VCIndex(vc)].Balance0Confirm = 0;
+				VCArray[VCIndex(vc)].Balance1Confirm = 0;
+				VCArray[VCIndex(vc)].fee = LoadFee(vc);
+				VCArray[VCIndex(vc)].Loaded = true;
+			}
+		}
+		else if (requestCode == Rivet.REQUEST_VC_GETPUBPRV && resultCode == RESULT_OK) { // Got PublicKey From Private
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			VCArray[VCIndex(vc)].PublicKey = data.getStringExtra(Rivet.EXTRA_PUBKEY);
+			AddKey(vc);
+		}
+		else if (requestCode == Rivet.REQUEST_ADDKEY && resultCode == RESULT_OK) { // Added Key to RivetAndroid Delete Local
+			String[] keynamelist = data.getStringExtra(Rivet.EXTRA_KEYNAME).split("_");
+			if (keynamelist.length == 2) {
+				if (new String("VC").equals(keynamelist[0])) {
+					DeleteLocalWallet(keynamelist[1]);
+				}
+			}
+		}
+		else if (requestCode == Rivet.REQUEST_VC_SIGNTRANS && resultCode == RESULT_OK) { // Got Signed Transaction
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String SignedTrans = data.getStringExtra(Rivet.EXTRA_SIGNED);
 			String urlstr = "http://rosieswallet.com/api-coin-v1/sendtrans.php?coin="+ vc +"&trans=" + SignedTrans;
 			Intent intentd = new Intent(this, GetBalance.class)
 				.putExtra(GetBalance.VC,vc)
 				.putExtra(GetBalance.TYPE,"send")
 				.putExtra(GetBalance.URL, urlstr);
 			startService(intentd);
-			
 		}
-		if (requestCode == Rivet.REQUEST_GETWALLET && resultCode == RESULT_OK) {
-			PublicAddress = data.getStringExtra("PublicAddress");
-			PrivateKey = data.getStringExtra("PrivateKey");
-			String vc = data.getStringExtra("vc");
-			SaveWallet(vc);
-			if (LoadWallet("TBTC")) LoadWebpage("main.html");
+		else if (requestCode == Rivet.REQUEST_DELETEKEY && resultCode == RESULT_OK) { // Got Delete Key
+			ToastIt("Wallet Deleted");
 		}
-		if (requestCode == 0) {
+		else if (requestCode == 0) {
 			if (resultCode == RESULT_OK) {
 				scanResult = data.getStringExtra("SCAN_RESULT");
 			}
@@ -272,68 +316,66 @@ public class MainActivity extends Activity {
 			String vc = intent.getStringExtra(GetBalance.VC);
 			String type = intent.getStringExtra(GetBalance.TYPE);
 			if (new String("unspent").equals(type)) {
-				if (new String(vc).equals(oldvc)) {
-					UnspentList = result;
-					try {
-						ArrayList<String> ar = new ArrayList<String>();
-						ArrayList<String> alltrans = new ArrayList<String>();
-						Double amt0 = 0.00;
-						Double amt1 = 0.00;
-						JSONObject jObj = new JSONObject(result);
-						JSONArray jArr = jObj.getJSONArray("unspent");
-						int transactions = jArr.length();
-						for (int i = 0; i < transactions; i++) {
-							JSONObject trans = (JSONObject)jArr.get(i);
-							String tx = (String)trans.get("tx");
-							Double amt = round(Double.parseDouble((String)trans.get("amount")),8);
-							DecimalFormat df = new DecimalFormat("0.00000000");
-							String amtstr = df.format(amt);
-							int n = (Integer)trans.get("n");
-							int confirmations = (Integer)trans.get("confirmations");
-							String script = (String)trans.get("script");
-							String txcombo = tx + "-" + Integer.toString(n);
-							if (alltrans.indexOf(txcombo)==-1) alltrans.add(txcombo);
-							if (confirmations > 0) {
-								if (ar.indexOf(txcombo)==-1) { // ignore duplicate tx
-									ar.add(txcombo);
-									amt1 += amt;
-								}
-							}
-							else {
-								amt0 += amt;
+				VCArray[VCIndex(vc)].UnspentList = result;
+				try {
+					ArrayList<String> ar = new ArrayList<String>();
+					ArrayList<String> alltrans = new ArrayList<String>();
+					Double amt0 = 0.00;
+					Double amt1 = 0.00;
+					JSONObject jObj = new JSONObject(result);
+					JSONArray jArr = jObj.getJSONArray("unspent");
+					int transactions = jArr.length();
+					for (int i = 0; i < transactions; i++) {
+						JSONObject trans = (JSONObject)jArr.get(i);
+						String tx = (String)trans.get("tx");
+						Double amt = round(Double.parseDouble((String)trans.get("amount")),8);
+						DecimalFormat df = new DecimalFormat("0.00000000");
+						String amtstr = df.format(amt);
+						int n = (Integer)trans.get("n");
+						int confirmations = (Integer)trans.get("confirmations");
+						String script = (String)trans.get("script");
+						String txcombo = tx + "-" + Integer.toString(n);
+						if (alltrans.indexOf(txcombo)==-1) alltrans.add(txcombo);
+						if (confirmations > 0) {
+							if (ar.indexOf(txcombo)==-1) {
+								ar.add(txcombo);
+								amt1 += amt;
 							}
 						}
-						Balance0Confirm = amt0;
-						Balance1Confirm = amt1;
-						GotBalanceList = true;
-						GotBalanceUC = true;
-						GotBalance = true;
-						boolean RemovedOne = false;
-						for (int j = spent.size()-1; j >= 0; j--) {
-							String tx = spent.get(j);
-							if (alltrans.indexOf(tx)==-1) {
-								spent.remove(tx);
-								RemovedOne = true;
-							}
+						else {
+							amt0 += amt;
 						}
-						if (RemovedOne) SaveTrans(vc);
-					} catch(Exception e) {
 					}
+					VCArray[VCIndex(vc)].Balance0Confirm = amt0;
+					VCArray[VCIndex(vc)].Balance1Confirm = amt1;
+					VCArray[VCIndex(vc)].GotBalanceList = true;
+					VCArray[VCIndex(vc)].GotBalanceUC = true;
+					VCArray[VCIndex(vc)].GotBalance = true;
+					boolean RemovedOne = false;
+					for (int j = VCArray[VCIndex(vc)].spent.size()-1; j >= 0; j--) {
+						String tx = VCArray[VCIndex(vc)].spent.get(j);
+						if (alltrans.indexOf(tx)==-1) {
+							VCArray[VCIndex(vc)].spent.remove(tx);
+							RemovedOne = true;
+						}
+					}
+					if (RemovedOne) SaveTrans(vc);
 				}
+				catch(Exception e) {}
 			}
 			else if (new String("send").equals(type)) {
 				if (new String("OK").equals(result)) {
-					if (new String(vc).equals(oldvc)) GetBalanceStart(vc);
+					GetBalanceStart(vc);
 					ToastIt("Transaction Sent Successfully");
-					for (String tx : spending) {
-						if (spent.indexOf(tx)==-1) spent.add(tx);
+					for (String tx : VCArray[VCIndex(vc)].spending) {
+						if (VCArray[VCIndex(vc)].spent.indexOf(tx)==-1) VCArray[VCIndex(vc)].spent.add(tx);
 					}
 					SaveTrans(vc);
 				}
 				else {
 					ToastIt("Transaction Returned Error: "+result);
 				}
-				spending = new ArrayList<String>();
+				VCArray[VCIndex(vc)].spending = new ArrayList<String>();
 			}
 		}
 	}
@@ -351,13 +393,65 @@ public class MainActivity extends Activity {
 			}
     		});
 	}
-	public void CreateWallet(String vc) {
+	private void GetPublicKey(String vc) {
+		if (!IsValidVC(vc)) return;
+		if (!MovingWallet) {
+			MovingWallet = true;
+			ToastIt("Moving Wallet to Rivet");
+		}
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_VC_GETPUBPRV)
+			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_PRVKEY, VCArray[VCIndex(vc)].OldPrivateKey);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_VC_GETPUBPRV);
+		}
+	}
+	private void GetKey(String vc) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_GETWALLET)
-			.putExtra(Rivet.EXTRA_VC, vc);
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_GETKEY)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
+			.putExtra(Rivet.EXTRA_VC,vc);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_GETWALLET);
+			startActivityForResult(intent,Rivet.REQUEST_GETKEY);
+		}
+	}
+	private void AddKey(String vc) {
+		if (!IsValidVC(vc)) return;
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ADDKEY)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
+			.putExtra(Rivet.EXTRA_PUBLICDATA,VCArray[VCIndex(vc)].PublicKey)
+			.putExtra(Rivet.EXTRA_SECUREDATA,VCArray[VCIndex(vc)].OldPrivateKey);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_ADDKEY);
+		}
+	}
+	public void CreateWallet(String vc) {
+		if (!IsValidVC(vc)) return;
+		VCArray[VCIndex(vc)].Loaded=false;
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_CREATE)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_ECC_CURVE, Rivet.CURVE_SECP256K1)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_ECDSA_CREATE);
+		}
+	}
+	public void DeleteWallet(String vc) {
+		if (!IsValidVC(vc)) return;
+		VCArray[VCIndex(vc)].Loaded=false;
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_DELETEKEY)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_DELETEKEY);
 		}
 	}
 	public boolean IsValidVC(String vc) {
@@ -367,7 +461,7 @@ public class MainActivity extends Activity {
 		if (new String("PPC").equals(vc)) return true;
 		return false;
 	}
-	public void DeleteWallet(String vc) {
+	public void DeleteLocalWallet(String vc) {
 		if (!IsValidVC(vc)) return;
 		String Key1 = new StringBuilder()
 					.append("PublicAddress")
@@ -377,20 +471,16 @@ public class MainActivity extends Activity {
 					.append("PrivateKey")
 					.append(vc)
 					.toString();
-		PublicAddress = null;
-		PrivateKey = null;
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.remove(Key1);
 		editor.remove(Key2);
 		editor.apply();
 		editor.commit();
-		oldvc = new String(vc);
 	}
 	public void LoadWebpage(String htmlfile) {
-		mainhtml = LoadData("website/"+htmlfile);
-		webView.loadDataWithBaseURL("file:///android_asset/",
-				mainhtml,"text/html", "UTF-8",null);
+		String html = LoadData("website/"+htmlfile);
+		webView.loadDataWithBaseURL("file:///android_asset/",html,"text/html", "UTF-8",null);
 	}
 	private String convertStreamToString(java.io.InputStream is) {
 	    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
@@ -398,11 +488,14 @@ public class MainActivity extends Activity {
 	}
 	public void GetBalanceStart(String vc) {
 		if (!IsValidVC(vc)) return;
+		if (!VCArray[VCIndex(vc)].Loaded) return;
 		GetUnspentStart(vc);
 	}
 	public void GetUnspentStart(String vc) {
 		if (!IsValidVC(vc)) return;
-		String urlstr = "http://rosieswallet.com/api-coin-v1/unspent.php?coin="+ vc +"&address=" + PublicAddress;
+		if (!VCArray[VCIndex(vc)].Loaded) return;
+		String urlstr = "http://rosieswallet.com/api-coin-v1/unspent.php?coin="+ vc +
+				"&address=" + VCArray[VCIndex(vc)].PublicAddress;
 		Intent intentd = new Intent(this, GetBalance.class)
 			.putExtra(GetBalance.VC, vc)
 			.putExtra(GetBalance.TYPE, "unspent")
@@ -410,32 +503,32 @@ public class MainActivity extends Activity {
 		startService(intentd);
 	}
 	public String GetBalanceAddressNew(String vc) {
+		if (!IsValidVC(vc)) return "";
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
 		DecimalFormat df = new DecimalFormat("0.00000000");
-		String ReturnStr = df.format(Balance1Confirm);
-		if (GotBalance) return ReturnStr;
+		String ReturnStr = df.format(VCArray[VCIndex(vc)].Balance1Confirm);
+		if (VCArray[VCIndex(vc)].GotBalance) return ReturnStr;
 		return "";
 	}
 	public String GetUnconfirmedBalanceAddressNew(String vc) {
+		if (!IsValidVC(vc)) return "";
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
 		DecimalFormat df = new DecimalFormat("0.00000000");
-		String ReturnStr = df.format(Balance0Confirm);
-		if (GotBalanceUC && Balance0Confirm != 0.00) return ReturnStr;
+		String ReturnStr = df.format(VCArray[VCIndex(vc)].Balance0Confirm);
+		if (VCArray[VCIndex(vc)].GotBalanceUC && VCArray[VCIndex(vc)].Balance0Confirm != 0.00) return ReturnStr;
 		return "";
 	}
 	public String GetPrivateKey(String vc) {
 		if (!IsValidVC(vc)) return "";
-		if ((new String(oldvc).equals(vc)) == false) {
-			LoadWallet(vc);
-		}
-		if (PrivateKey == null) return "";
-		return PrivateKey;
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
+		if (VCArray[VCIndex(vc)].OldPrivateKey == null) return "";
+		return VCArray[VCIndex(vc)].OldPrivateKey;
 	}
 	public String GetPublicAddress(String vc) {
 		if (!IsValidVC(vc)) return "";
-		if ((new String(oldvc).equals(vc)) == false) {
-			LoadWallet(vc);
-		}
-		if (PublicAddress == null) return "";
-		return PublicAddress;
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
+		if (VCArray[VCIndex(vc)].PublicAddress == null) return "";
+		return VCArray[VCIndex(vc)].PublicAddress;
 	}
 	public long LoadFee(String vc) {
 		long defaultval=0,retval;
@@ -455,7 +548,7 @@ public class MainActivity extends Activity {
 	public void SaveFee(String vc,long newfee) {
 		if (!IsValidVC(vc)) return;
 		if (newfee<0) return;
-		if (oldvc == vc) fee = newfee;
+		VCArray[VCIndex(vc)].fee = newfee;
 		String Key = new StringBuilder()
 					.append(vc)
 					.append("-Fee")
@@ -475,10 +568,10 @@ public class MainActivity extends Activity {
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 		String spentlist = settings.getString(Key, "");
 		String[] list = spentlist.split(",");
-		spent = new ArrayList<String>();
+		VCArray[VCIndex(vc)].spent = new ArrayList<String>();
 		for (int i = 0; i < list.length; i++) {
 			if (new String("").equals(list[i]) == false) {
-				spent.add(list[i]);
+				VCArray[VCIndex(vc)].spent.add(list[i]);
 			}
 		}
 	}
@@ -489,38 +582,15 @@ public class MainActivity extends Activity {
 					.append(vc)
 					.toString();
 		StringBuilder sb = new StringBuilder();
-		for (String tx : spent) sb.append(tx).append(",");
+		for (String tx : VCArray[VCIndex(vc)].spent) sb.append(tx).append(",");
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putString(Key, sb.toString());
 		editor.apply();
 		editor.commit();
 	}
-	private void SaveWallet(String vc) {
-		if (!IsValidVC(vc)) return;
-		oldvc = new String(vc);
-		String Key1 = new StringBuilder()
-					.append("PublicAddress")
-					.append(vc)
-					.toString();
-		String Key2 = new StringBuilder()
-					.append("PrivateKey")
-					.append(vc)
-					.toString();
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-		SharedPreferences.Editor editor = settings.edit();
-		editor.putString(Key1, PublicAddress);
-		editor.putString(Key2, PrivateKey);
-		if (PublicAddress=="") PublicAddress=null;
-		if (PrivateKey=="") PrivateKey=null;
-		editor.apply();
-		editor.commit();
-	}
-	private boolean SaveOldWallet(String vc,String pair) {
+	private Boolean LocalWalletExists(String vc) {
 		if (!IsValidVC(vc)) return false;
-		String[] splited = pair.split("\\s+");
-		if (splited.length != 2) return false;
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 		String Key1 = new StringBuilder()
 					.append("PublicAddress")
 					.append(vc)
@@ -529,73 +599,35 @@ public class MainActivity extends Activity {
 					.append("PrivateKey")
 					.append(vc)
 					.toString();
-		String CurKey1 = settings.getString(Key1, "");
-		String CurKey2 = settings.getString(Key2, "");
-		if (CurKey1=="") {
-			SharedPreferences.Editor editor = settings.edit();
-		        String TempPub = splited[0];
-			String TempPrv = splited[1];
-			if (TempPub != "" && TempPrv != "") {
-				editor.putString(Key1, TempPub);
-				editor.putString(Key2, TempPrv);
-				editor.apply();
-				editor.commit();
-				return true;
-			}
-		}
-		return false;
-	}
-	private void MoveOldWalletEx(String vc) {
-		if (!IsValidVC(vc)) return;
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-		String Key1 = new StringBuilder()
-					.append("PublicAddress")
-					.append(vc)
-					.toString();
-		String Key2 = new StringBuilder()
-					.append("PrivateKey")
-					.append(vc)
-					.toString();
-		if (!settings.contains(Key1)) {
-			SharedPreferences.Editor editor = settings.edit();
-		        String TempPub = "";
-			String TempPrv = "";
-			if (TempPub != "" && TempPrv != "") {
-				editor.putString(Key1, TempPub);
-				editor.putString(Key2, TempPrv);
-				editor.apply();
-				editor.commit();
-			}
-		}
-	}
-	private void MoveOldWallet() {
-		MoveOldWalletEx("TBTC");
-		MoveOldWalletEx("BTC");
-		MoveOldWalletEx("LTC");
-		MoveOldWalletEx("PPC");
-	}
-	private Boolean LoadWallet(String vc) {
-		if (!IsValidVC(vc)) return false;
-		MoveOldWallet();
-		String Key1 = new StringBuilder()
-					.append("PublicAddress")
-					.append(vc)
-					.toString();
-		String Key2 = new StringBuilder()
-					.append("PrivateKey")
-					.append(vc)
-					.toString();
-		oldvc = new String(vc);
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-		PublicAddress = settings.getString(Key1, "");
-		PrivateKey = settings.getString(Key2, "");
-		GotBalance = false;
-		GotBalanceUC = false;
-		GotBalanceList = false;
-		Balance0Confirm = 0;
-		Balance1Confirm = 0;
+		String PublicAddress = settings.getString(Key1, "");
+		String PrivateKey = settings.getString(Key2, "");
 		if (PublicAddress == "" || PrivateKey == "") return false;
-		fee = LoadFee(vc);
+		return true;
+	}
+	private Boolean LocalWalletLoad(String vc) {
+		if (!IsValidVC(vc)) return false;
+		String Key1 = new StringBuilder()
+					.append("PublicAddress")
+					.append(vc)
+					.toString();
+		String Key2 = new StringBuilder()
+					.append("PrivateKey")
+					.append(vc)
+					.toString();
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		String PublicAddress = settings.getString(Key1, "");
+		String PrivateKey = settings.getString(Key2, "");
+		if (PublicAddress == "" || PrivateKey == "") return false;
+		VCArray[VCIndex(vc)].PublicAddress = PublicAddress;
+		VCArray[VCIndex(vc)].OldPrivateKey = PrivateKey;
+		VCArray[VCIndex(vc)].PublicKey = "";
+		VCArray[VCIndex(vc)].GotBalance = false;
+		VCArray[VCIndex(vc)].GotBalanceUC = false;
+		VCArray[VCIndex(vc)].GotBalanceList = false;
+		VCArray[VCIndex(vc)].Balance0Confirm = 0;
+		VCArray[VCIndex(vc)].Balance1Confirm = 0;
+		VCArray[VCIndex(vc)].fee = LoadFee(vc);
 		LoadTrans(vc);
 		return true;
 	}
@@ -665,5 +697,26 @@ public class MainActivity extends Activity {
 		BigDecimal bd = new BigDecimal(value);
 		bd = bd.setScale(places, RoundingMode.HALF_UP);
 		return bd.doubleValue();
+	}
+	private static int VCIndex(String vc) {
+		if (new String("BTC").equals(vc)) return 1;
+		if (new String("LTC").equals(vc)) return 2;
+		if (new String("PPC").equals(vc)) return 3;
+		return 0; // default to TBTC
+	}
+	private class VirtualCoin {
+		public String PublicAddress = null;
+		public String PublicKey = null;
+		public String OldPrivateKey = null;
+		public boolean GotBalance = false;
+		public boolean GotBalanceUC = false;
+		public boolean GotBalanceList = false;
+		public double Balance1Confirm = 0;
+		public double Balance0Confirm = 0;
+		public String UnspentList = "";
+		public ArrayList<String> spent = new ArrayList<String>();
+		public ArrayList<String> spending = new ArrayList<String>();
+		public long fee = 0;
+		public boolean Loaded = false;
 	}
 }
