@@ -18,7 +18,8 @@ public class Rivet {
 	public static final int REQUEST_ECDSA_GETPUBPRV	= 3004; // Extract a public key out of a private key
 	public static final int REQUEST_ECDSA_GETPUBSIG	= 3005; // Extract a public key out of a message, signature and curve.
 	// Request Codes: ECDH
-	public static final int REQUEST_ECDH_CREATE	= 4001; // Create a ECDH Agreement between a private and public key	
+	public static final int REQUEST_ECDH_ENCRYPT	= 4001; // Encrypted Data using ECDH
+	public static final int REQUEST_ECDH_DECRYPT	= 4002; // Decrypt Data using ECDH
 	// Request Codes: AES
 	public static final int REQUEST_AES_ENCRYPT	= 5001; // Encrypted Data using AES
 	public static final int REQUEST_AES_DECRYPT	= 5002; // Decrypt Data using AES
@@ -64,6 +65,10 @@ public class Rivet {
 	public static final String CURVE_SECP192K1	= "SECP192K1";	/*!< 192-bits "Koblitz" curve */
 	public static final String CURVE_SECP224K1	= "SECP224K1";	/*!< 224-bits "Koblitz" curve */
 	public static final String CURVE_SECP256K1	= "SECP256K1";	/*!< 256-bits "Koblitz" curve */
+	// ALGOs
+	public static final String ECC_ALGO_AES		= "AES";
+	// HASHs
+	public static final String ECC_HASH_SHA256	= "SHA256";
+	public static final String ECC_HASH_SHA256x2	= "SHA256x2";
 	
 }
-
