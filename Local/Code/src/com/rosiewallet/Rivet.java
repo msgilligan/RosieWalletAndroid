@@ -18,6 +18,7 @@ public class Rivet {
 	public static final int REQUEST_ECDSA_GETPUBPRV	= 3004; // Extract a public key out of a private key
 	public static final int REQUEST_ECDSA_GETPUBSIG	= 3005; // Extract a public key out of a message, signature and curve.
 	// Request Codes: ECDH
+	public static final int REQUEST_ECDH_SHARED	= 4000; // Shared Key using ECDH
 	public static final int REQUEST_ECDH_ENCRYPT	= 4001; // Encrypted Data using ECDH
 	public static final int REQUEST_ECDH_DECRYPT	= 4002; // Decrypt Data using ECDH
 	// Request Codes: AES
@@ -49,6 +50,10 @@ public class Rivet {
 	public static final String EXTRA_VC_PUBADDR	= "PublicAddress";
 	public static final String EXTRA_PUBKEY		= "PublicKey";
 	public static final String EXTRA_PRVKEY		= "PrivateKey";
+	public static final String EXTRA_MESSAGE	= "Message";
+	public static final String EXTRA_SIGNATURE	= "Signature";
+	public static final String EXTRA_VERIFIED	= "Verified";
+	public static final String EXTRA_SHAREDKEY	= "SharedKey";
 	// ECC Curves
 	public static final String CURVE_SECP192R1	= "SECP192R1";	/*!< 192-bits NIST curve  */
 	public static final String CURVE_SECP224R1	= "SECP224R1";	/*!< 224-bits NIST curve  */

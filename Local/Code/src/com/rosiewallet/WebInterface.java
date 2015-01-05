@@ -52,12 +52,48 @@ public class WebInterface {
 		return;
 	}
 	@JavascriptInterface
+	public void bitcoinSignMessage(String vc, String Message) {
+		((MainActivity)mContext).signmessage(vc,Message);
+		return;
+	}
+	@JavascriptInterface
+	public void bitcoinVerifyMessage(String vc, String PUB, String SIG, String Message) {
+		((MainActivity)mContext).verifymessage(vc,PUB,SIG,Message);
+		return;
+	}
+	@JavascriptInterface
+	public void bitcoinEncryptMessage(String vc, String TOPUB, String Message) {
+		((MainActivity)mContext).encryptmessage(vc,TOPUB,Message);
+		return;
+	}
+	@JavascriptInterface
+	public void bitcoinDecryptMessage(String vc, String FROMPUB, String Message) {
+		((MainActivity)mContext).decryptmessage(vc,FROMPUB,Message);
+		return;
+	}
+	@JavascriptInterface
 	public String bitcoinShowAddress(String vc) {
 		return ((MainActivity)mContext).GetPublicAddress(vc);
 	}
 	@JavascriptInterface
+	public String bitcoinShowPublicKey(String vc) {
+		return ((MainActivity)mContext).GetPublicKey(vc);
+	}
+	@JavascriptInterface
 	public String bitcoinPrivateKey(String vc) {
 		return ((MainActivity)mContext).GetPrivateKey(vc);
+	}
+	@JavascriptInterface
+	public String bitcoinGetSignature(String vc) {
+		return ((MainActivity)mContext).GetSignature(vc);
+	}
+	@JavascriptInterface
+	public String bitcoinGetEncrypted(String vc) {
+		return ((MainActivity)mContext).GetEncrypted(vc);
+	}
+	@JavascriptInterface
+	public String bitcoinGetDecrypted(String vc) {
+		return ((MainActivity)mContext).GetDecrypted(vc);
 	}
 	@JavascriptInterface
 	public void bitcoinGetBalanceStart(String vc) {

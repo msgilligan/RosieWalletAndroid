@@ -133,7 +133,8 @@ $(document).ready(function() {
 		try {
 			AndroidHost.bitcoinNewAccount(vc);
 			bitcoinaddress = AndroidHost.bitcoinShowAddress(vc);
-			bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
+			bitcoinpublic = AndroidHost.bitcoinShowPublicKey(vc);
+			// bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
 			bitcoinbalanceStr = "";
 			bitcoinunbalanceStr = "";
 			displayAddress();
@@ -151,6 +152,7 @@ $(document).ready(function() {
 		try {
 			AndroidHost.bitcoinDeleteAccount(vc);
 			bitcoinaddress = "";
+			bitcoinpublic = "";
 			bitcoinbalanceStr = "";
 			bitcoinunbalanceStr = "";
 			$("#receive-qrcode-public").text('');
@@ -193,10 +195,68 @@ $(document).ready(function() {
 			
 		} catch(e) {}
 	});
-	//  
+	$("#btn-message-sign").click(function() {
+		try {
+			sign_Msg = a2hex($("#txt-message-message").val());
+			sign_Sig = AndroidHost.bitcoinSignMessage(vc,sign_Msg);
+			$("#txt-message-signature").val(sign_Sig);
+			
+		} catch(e) {}
+	});
+	$("#btn-message-clipboardpub").click(function() {
+		try {
+			AndroidHost.copyToClipBoard(bitcoinpublic);
+			
+		} catch(e) {}
+	});
+	$("#btn-message-clipboard").click(function() {
+		try {
+			AndroidHost.copyToClipBoard(sign_Sig);
+			
+		} catch(e) {}
+	});
+	$("#btn-message-verify").click(function() {
+		try {
+			sign_Pub = $("#txt-message-signerpub").val();
+			sign_Sig = $("#txt-message-vsignature").val();
+			sign_Msg = a2hex($("#txt-message-vmessage").val());
+			AndroidHost.bitcoinVerifyMessage(vc,sign_Pub,sign_Sig,sign_Msg);
+			
+		} catch(e) {}
+	});
+	$("#btn-message-encrypt").click(function() {
+		try {
+			toPub = $("#txt-message-topublickey").val();
+			Msg = a2hex($("#txt-message-emessage").val());
+			AndroidHost.bitcoinEncryptMessage(vc,toPub,Msg);
+			
+		} catch(e) {}
+	});
+	$("#btn-message-decrypt").click(function() {
+		try {
+			fromPub = $("#txt-message-frompublickey").val();
+			EncMsg = $("#txt-message-dencrypted").val();
+			AndroidHost.bitcoinDecryptMessage(vc,fromPub,EncMsg);
+			
+		} catch(e) {}
+	});
+	$("#btn-message-eclipboard").click(function() {
+		try {
+			tocopy = $("#txt-message-encrypted").val();
+			AndroidHost.copyToClipBoard(tocopy);
+			
+		} catch(e) {}
+	});
+	$("#btn-message-dclipboard").click(function() {
+		try {
+			tocopy = $("#txt-message-dmessage").val();
+			AndroidHost.copyToClipBoard(tocopy);
+			
+		} catch(e) {}
+	});
 	$("#btn-copy-clipboard").click(function() {
 		try {
-			AndroidHost.copyToClipBoard(bitcoinaddress); // new String(bitcoinaddress));
+			AndroidHost.copyToClipBoard(bitcoinaddress);
 			
 		} catch(e) {}
 	});
@@ -206,9 +266,11 @@ $(document).ready(function() {
 	usetestnet = true;
 	$("#checkbox-usetestnet").attr("checked",usetestnet).checkboxradio("refresh");
 	bitcoinaddress = AndroidHost.bitcoinShowAddress(vc);
-	bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
+	bitcoinpublic = AndroidHost.bitcoinShowPublicKey(vc);
+	// bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
 	bitcoinbalanceStr = "";
 	bitcoinunbalanceStr = "";
+	sign_Sig = "";
 	displayAddress();
 	buildQRCode();
 	DisplayWallet();
@@ -247,6 +309,12 @@ $(document).ready(function() {
 	function checkBalanceExe() {
 		bitcoinbalanceStr = AndroidHost.bitcoinGetBalance(vc);
 		bitcoinunbalanceStr = AndroidHost.bitcoinGetZeroBalance(vc);
+		sign_Sig = AndroidHost.bitcoinGetSignature(vc);
+		$("#txt-message-signature").val(sign_Sig);
+		EncMsg = AndroidHost.bitcoinGetEncrypted(vc);
+		$("#txt-message-encrypted").val(EncMsg);
+		DecMsg = hex2a(AndroidHost.bitcoinGetDecrypted(vc));
+		$("#txt-message-dmessage").val(DecMsg);
 		DisplayBalance();
 	}
 	function filterTEST(instr) {
@@ -259,7 +327,8 @@ $(document).ready(function() {
 		$("#div-image-"+vc.toLowerCase()).show();
 		oldvc = vc;
 		bitcoinaddress = AndroidHost.bitcoinShowAddress(vc);
-		bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
+		bitcoinpublic = AndroidHost.bitcoinShowPublicKey(vc);
+		// bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
 		id1 = setInterval(checkBalance, 1 * 1000);
 		bitcoinbalanceStr = "";
 		bitcoinunbalanceStr = "";
@@ -290,10 +359,10 @@ $(document).ready(function() {
 		$("#div-no").hide();
 		switch(tooltype) {
 		    case 1:
-			$("#tools-message-sign").hide();
+			$("#tools-message-sign").show();
 			$("#tools-message-verify").hide();
 			$("#tools-message-encrypt").hide();
-			$("#tools-message-decrypt").show();
+			$("#tools-message-decrypt").hide();
 			$("#div-home-sign").hide();
 			$("#div-home-verify").hide();
 			$("#div-home-encrypt").hide();
@@ -372,10 +441,12 @@ $(document).ready(function() {
 							bitcoinaddress + '</font></center>');
 			$("#receive-address").html('<center><font size=-1>' +
 							bitcoinaddress + '</font></center>');
-			$("#receive-private").html('<center><font size=-1>' +
-							bitcoinprivate + '</font></center>');
+			//$("#receive-private").html('<center><font size=-1>' +
+			//				bitcoinprivate + '</font></center>');
 			$("#send-message").html('');
 			DisplayBalance();
+			$("#txt-message-publickey").val(bitcoinpublic);
+			
 		}
 		else {
 			$("#bitcoin-address").html('<center>' + 
@@ -387,6 +458,7 @@ $(document).ready(function() {
 			$("#receive-private").html('');
 			$("#bitcoin-balance").html('');
 			$("#bitcoin-unconfirmbalance").html('');
+			$("#txt-message-publickey").val('');
 			
 		}
 	}
@@ -404,7 +476,7 @@ $(document).ready(function() {
 		else {
 			$("#receive-qrcode-public").text('');
 		}
-		if (bitcoinprivate != "") {
+		/*if (bitcoinprivate != "") {
 			$("#receive-qrcode-private").text('');
 			$("#receive-qrcode-private").qrcode({
 	    			"width": 100,
@@ -416,7 +488,7 @@ $(document).ready(function() {
 		}
 		else {
 			$("#receive-qrcode-private").text('');
-		}
+		}*/
 	}
 	function GetVCName(vccheck) {
 		switch(vccheck) {
@@ -497,4 +569,19 @@ $(document).ready(function() {
 		parsed.address = match[1];
 		return parsed;
 	}
+	function hex2a(hexx) {
+		var hex = hexx.toString();//force conversion
+		var str = '';
+		for (var i = 0; i < hex.length; i += 2)
+			str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+		return str;
+	}
+	function a2hex(str) {
+		var arr = [];
+		for (var i = 0, l = str.length; i < l; i ++) {
+			var hex = Number(str.charCodeAt(i)).toString(16);
+			arr.push(hex);
+		}
+		return arr.join('');
+	}	
 });

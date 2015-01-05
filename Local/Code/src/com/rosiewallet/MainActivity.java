@@ -97,10 +97,10 @@ public class MainActivity extends Activity {
 		GetKey("PPC");
 	}
 	private void MoveOldKeys() {
-		if (LocalWalletLoad("TBTC")) GetPublicKey("TBTC");
-		if (LocalWalletLoad("BTC"))  GetPublicKey("BTC");
-		if (LocalWalletLoad("LTC"))  GetPublicKey("LTC");
-		if (LocalWalletLoad("PPC"))  GetPublicKey("PPC");
+		if (LocalWalletLoad("TBTC")) GetPublicKeyFromPrivate("TBTC");
+		if (LocalWalletLoad("BTC"))  GetPublicKeyFromPrivate("BTC");
+		if (LocalWalletLoad("LTC"))  GetPublicKeyFromPrivate("LTC");
+		if (LocalWalletLoad("PPC"))  GetPublicKeyFromPrivate("PPC");
 	}
 	public void ScanQRCode() {
 		try {
@@ -229,6 +229,57 @@ public class MainActivity extends Activity {
 			startActivityForResult(intent,Rivet.REQUEST_VC_SIGNTRANS);
 		}
 	}
+	public void signmessage(String vc,String Message) {
+		if (!IsValidVC(vc)) return;
+		if (Message == null) return;
+		if (Message.equals("")) return;
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_SIGN)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
+			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_MESSAGE, Message);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_ECDSA_SIGN);
+		}
+	}
+	public void verifymessage(String vc, String PUB, String SIG, String Message) {
+		if (!IsValidVC(vc)) return;
+		if (PUB == null) return;
+		if (PUB.equals("")) return;
+		if (SIG == null) return;
+		if (SIG.equals("")) return;
+		if (Message == null) return;
+		if (Message.equals("")) return;
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_VERIFY)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_PUB, PUB)
+			.putExtra(Rivet.EXTRA_SIGNATURE, SIG)
+			.putExtra(Rivet.EXTRA_MESSAGE, Message);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_ECDSA_VERIFY);
+		}
+	}
+	public void encryptmessage(String vc, String TOPUB, String Message) {
+		if (!IsValidVC(vc)) return;
+		if (TOPUB == null) return;
+		if (TOPUB.equals("")) return;
+		if (Message == null) return;
+		if (Message.equals("")) return;
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDH_SHARED)
+			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_TOPUB, TOPUB);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_ECDH_SHARED);
+		}
+	}
+	public void decryptmessage(String vc, String TOPUB, String Message) {
+		ToastIt("Dencrypted Not Implemented Yet");
+	}
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
@@ -239,6 +290,9 @@ public class MainActivity extends Activity {
 			if (new String("").equals(PUBLICDATA) == false ) {
 				VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
 				VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
+				VCArray[VCIndex(vc)].Signature = "";
+				VCArray[VCIndex(vc)].Encrypted = "";
+				VCArray[VCIndex(vc)].Decrypted = "";
 				VCArray[VCIndex(vc)].GotBalance = false;
 				VCArray[VCIndex(vc)].GotBalanceUC = false;
 				VCArray[VCIndex(vc)].GotBalanceList = false;
@@ -250,6 +304,28 @@ public class MainActivity extends Activity {
 			}
 			else ToastIt("Blank returned from create");
 		}
+		if (requestCode == Rivet.REQUEST_ECDSA_SIGN && resultCode == RESULT_OK) { // Sign Message
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String SIG = data.getStringExtra(Rivet.EXTRA_SIGNATURE);
+			if (SIG.equals("") == false ) {
+				VCArray[VCIndex(vc)].Signature = SIG;
+				ToastIt("Message Signed");
+			}
+		}
+		if (requestCode == Rivet.REQUEST_ECDSA_VERIFY && resultCode == RESULT_OK) { // Verify Message
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String VERIFIED = data.getStringExtra(Rivet.EXTRA_VERIFIED);
+			if (VERIFIED.equals("") == false ) {
+				ToastIt("Verify Message Returned: "+VERIFIED);
+			}
+		}
+		if (requestCode == Rivet.REQUEST_ECDH_SHARED && resultCode == RESULT_OK) { // Verify Message
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String SHARED = data.getStringExtra(Rivet.EXTRA_SHAREDKEY);
+			if (SHARED.equals("") == false ) {
+				ToastIt("SharedKey: "+SHARED);
+			}
+		}
 		else if (requestCode == Rivet.REQUEST_GETKEY && resultCode == RESULT_OK) { // Got Wallet
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
 			String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
@@ -257,6 +333,9 @@ public class MainActivity extends Activity {
 			if (new String("").equals(PUBLICDATA) == false ) {
 				VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
 				VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
+				VCArray[VCIndex(vc)].Signature = "";
+				VCArray[VCIndex(vc)].Encrypted = "";
+				VCArray[VCIndex(vc)].Decrypted = "";
 				VCArray[VCIndex(vc)].GotBalance = false;
 				VCArray[VCIndex(vc)].GotBalanceUC = false;
 				VCArray[VCIndex(vc)].GotBalanceList = false;
@@ -393,7 +472,7 @@ public class MainActivity extends Activity {
 			}
     		});
 	}
-	private void GetPublicKey(String vc) {
+	private void GetPublicKeyFromPrivate(String vc) {
 		if (!IsValidVC(vc)) return;
 		if (!MovingWallet) {
 			MovingWallet = true;
@@ -530,6 +609,30 @@ public class MainActivity extends Activity {
 		if (VCArray[VCIndex(vc)].PublicAddress == null) return "";
 		return VCArray[VCIndex(vc)].PublicAddress;
 	}
+	public String GetPublicKey(String vc) {
+		if (!IsValidVC(vc)) return "";
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
+		if (VCArray[VCIndex(vc)].PublicKey == null) return "";
+		return VCArray[VCIndex(vc)].PublicKey;
+	}
+	public String GetSignature(String vc) {
+		if (!IsValidVC(vc)) return "";
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
+		if (VCArray[VCIndex(vc)].Signature == null) return "";
+		return VCArray[VCIndex(vc)].Signature;
+	}
+	public String GetEncrypted(String vc) {
+		if (!IsValidVC(vc)) return "";
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
+		if (VCArray[VCIndex(vc)].Encrypted == null) return "";
+		return VCArray[VCIndex(vc)].Encrypted;
+	}
+	public String GetDecrypted(String vc) {
+		if (!IsValidVC(vc)) return "";
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
+		if (VCArray[VCIndex(vc)].Decrypted == null) return "";
+		return VCArray[VCIndex(vc)].Decrypted;
+	}
 	public long LoadFee(String vc) {
 		long defaultval=0,retval;
 		if (!IsValidVC(vc)) return -1;
@@ -620,6 +723,9 @@ public class MainActivity extends Activity {
 		String PrivateKey = settings.getString(Key2, "");
 		if (PublicAddress == "" || PrivateKey == "") return false;
 		VCArray[VCIndex(vc)].PublicAddress = PublicAddress;
+		VCArray[VCIndex(vc)].Signature = "";
+		VCArray[VCIndex(vc)].Encrypted = "";
+		VCArray[VCIndex(vc)].Decrypted = "";
 		VCArray[VCIndex(vc)].OldPrivateKey = PrivateKey;
 		VCArray[VCIndex(vc)].PublicKey = "";
 		VCArray[VCIndex(vc)].GotBalance = false;
@@ -708,6 +814,9 @@ public class MainActivity extends Activity {
 		public String PublicAddress = null;
 		public String PublicKey = null;
 		public String OldPrivateKey = null;
+		public String Signature = null;
+		public String Encrypted = null;
+		public String Decrypted = null;
 		public boolean GotBalance = false;
 		public boolean GotBalanceUC = false;
 		public boolean GotBalanceList = false;
