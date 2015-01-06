@@ -319,7 +319,7 @@ public class MainActivity extends Activity {
 				ToastIt("Verify Message Returned: "+VERIFIED);
 			}
 		}
-		if (requestCode == Rivet.REQUEST_ECDH_SHARED && resultCode == RESULT_OK) { // Verify Message
+		if (requestCode == Rivet.REQUEST_ECDH_SHARED && resultCode == RESULT_OK) { // SharedKey/Agreement
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
 			String SHARED = data.getStringExtra(Rivet.EXTRA_SHAREDKEY);
 			if (SHARED.equals("") == false ) {
