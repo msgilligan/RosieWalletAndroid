@@ -54,6 +54,7 @@ public class Rivet {
 	public static final String EXTRA_SIGNATURE	= "Signature";
 	public static final String EXTRA_VERIFIED	= "Verified";
 	public static final String EXTRA_SHAREDKEY	= "SharedKey";
+	public static final String EXTRA_KEY		= "Key";
 	// ECC Curves
 	public static final String CURVE_SECP192R1	= "SECP192R1";	/*!< 192-bits NIST curve  */
 	public static final String CURVE_SECP224R1	= "SECP224R1";	/*!< 224-bits NIST curve  */

@@ -263,22 +263,42 @@ public class MainActivity extends Activity {
 		}
 	}
 	public void encryptmessage(String vc, String TOPUB, String Message) {
+		// First we will create a shared KEY
+		// Then we encrypte the message using shared key
 		if (!IsValidVC(vc)) return;
 		if (TOPUB == null) return;
 		if (TOPUB.equals("")) return;
 		if (Message == null) return;
 		if (Message.equals("")) return;
+		VCArray[VCIndex(vc)].ToEncrypt = Message; // Save For Later
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDH_SHARED)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER,1) 
 			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_TOPUB, TOPUB);
 		if (intent.resolveActivity(getPackageManager()) != null) {
 			startActivityForResult(intent,Rivet.REQUEST_ECDH_SHARED);
 		}
 	}
 	public void decryptmessage(String vc, String TOPUB, String Message) {
-		ToastIt("Dencrypted Not Implemented Yet");
+		// First we will create a shared KEY
+		// Then we encrypte the message using shared key
+		if (!IsValidVC(vc)) return;
+		if (TOPUB == null) return;
+		if (TOPUB.equals("")) return;
+		if (Message == null) return;
+		if (Message.equals("")) return;
+		VCArray[VCIndex(vc)].ToDecrypt = Message; // Save For Later
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDH_SHARED)
+			.putExtra(Rivet.EXTRA_PROVIDER,1) 
+			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
+			.putExtra(Rivet.EXTRA_TOPUB, TOPUB);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_ECDH_SHARED);
+		}
 	}
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -292,7 +312,9 @@ public class MainActivity extends Activity {
 				VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
 				VCArray[VCIndex(vc)].Signature = "";
 				VCArray[VCIndex(vc)].Encrypted = "";
+				VCArray[VCIndex(vc)].ToEncrypt = "";
 				VCArray[VCIndex(vc)].Decrypted = "";
+				VCArray[VCIndex(vc)].ToDecrypt = "";
 				VCArray[VCIndex(vc)].GotBalance = false;
 				VCArray[VCIndex(vc)].GotBalanceUC = false;
 				VCArray[VCIndex(vc)].GotBalanceList = false;
@@ -304,7 +326,7 @@ public class MainActivity extends Activity {
 			}
 			else ToastIt("Blank returned from create");
 		}
-		if (requestCode == Rivet.REQUEST_ECDSA_SIGN && resultCode == RESULT_OK) { // Sign Message
+		else if (requestCode == Rivet.REQUEST_ECDSA_SIGN && resultCode == RESULT_OK) { // Sign Message
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
 			String SIG = data.getStringExtra(Rivet.EXTRA_SIGNATURE);
 			if (SIG.equals("") == false ) {
@@ -312,19 +334,75 @@ public class MainActivity extends Activity {
 				ToastIt("Message Signed");
 			}
 		}
-		if (requestCode == Rivet.REQUEST_ECDSA_VERIFY && resultCode == RESULT_OK) { // Verify Message
+		else if (requestCode == Rivet.REQUEST_ECDSA_VERIFY && resultCode == RESULT_OK) { // Verify Message
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
 			String VERIFIED = data.getStringExtra(Rivet.EXTRA_VERIFIED);
 			if (VERIFIED.equals("") == false ) {
 				ToastIt("Verify Message Returned: "+VERIFIED);
 			}
 		}
-		if (requestCode == Rivet.REQUEST_ECDH_SHARED && resultCode == RESULT_OK) { // SharedKey/Agreement
+		else if (requestCode == Rivet.REQUEST_ECDH_SHARED && resultCode == RESULT_OK) { // SharedKey/Agreement
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
 			String SHARED = data.getStringExtra(Rivet.EXTRA_SHAREDKEY);
 			if (SHARED.equals("") == false ) {
-				ToastIt("SharedKey: "+SHARED);
+				boolean didIntent = false;
+				String Message = VCArray[VCIndex(vc)].ToEncrypt;
+				if (Message != null) {
+					if (Message.equals("") == false) {
+						Intent intent = new Intent(Rivet.RIVET_INTENT)
+							.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_ENCRYPT)
+							.putExtra(Rivet.EXTRA_PROVIDER, 1) 
+							.putExtra(Rivet.EXTRA_VC, vc)
+							.putExtra("ALGO", "")
+							.putExtra(Rivet.EXTRA_KEY, SHARED)
+							.putExtra(Rivet.EXTRA_MESSAGE, Message);
+						if (intent.resolveActivity(getPackageManager()) != null) {
+							startActivityForResult(intent,Rivet.REQUEST_AES_ENCRYPT);
+						}
+						didIntent = true;
+					}
+				}
+				if (didIntent == false) {
+					Message = VCArray[VCIndex(vc)].ToDecrypt;
+					if (Message != null) {
+						if (Message.equals("") == false) {
+							Intent intent = new Intent(Rivet.RIVET_INTENT)
+								.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_DECRYPT)
+								.putExtra(Rivet.EXTRA_PROVIDER, 1) 
+								.putExtra(Rivet.EXTRA_VC, vc)
+								.putExtra("ALGO", "")
+								.putExtra(Rivet.EXTRA_KEY, SHARED)
+								.putExtra(Rivet.EXTRA_MESSAGE, Message);
+							if (intent.resolveActivity(getPackageManager()) != null) {
+								startActivityForResult(intent,Rivet.REQUEST_AES_DECRYPT);
+							}
+							didIntent = true;
+						}
+					}
+				}
+				if (didIntent == false) ToastIt("Encrypt/Decrypt Failed Message Blank");
 			}
+			else ToastIt("Encrypt/Decrypt Failed while creating Shared Key. Shared Key Blank");
+		}
+		else if (requestCode == Rivet.REQUEST_AES_ENCRYPT && resultCode == RESULT_OK) { // AES Encrypt
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String Encrypted = data.getStringExtra(Rivet.EXTRA_MESSAGE);
+			if (Encrypted.equals("") == false ) {
+				ToastIt("Message Encrypted");
+				VCArray[VCIndex(vc)].Encrypted = Encrypted;
+				VCArray[VCIndex(vc)].ToEncrypt = "";
+			}
+			else ToastIt("Encrypt Failed Returne Blank");
+		}
+		else if (requestCode == Rivet.REQUEST_AES_DECRYPT && resultCode == RESULT_OK) { // AES Encrypt
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String Decrypted = data.getStringExtra(Rivet.EXTRA_MESSAGE);
+			if (Decrypted.equals("") == false ) {
+				ToastIt("Message Decrypted");
+				VCArray[VCIndex(vc)].Decrypted = Decrypted;
+				VCArray[VCIndex(vc)].ToDecrypt = "";
+			}
+			else ToastIt("Decrypt Failed Returne Blank");
 		}
 		else if (requestCode == Rivet.REQUEST_GETKEY && resultCode == RESULT_OK) { // Got Wallet
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
@@ -335,7 +413,9 @@ public class MainActivity extends Activity {
 				VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
 				VCArray[VCIndex(vc)].Signature = "";
 				VCArray[VCIndex(vc)].Encrypted = "";
+				VCArray[VCIndex(vc)].ToEncrypt = "";
 				VCArray[VCIndex(vc)].Decrypted = "";
+				VCArray[VCIndex(vc)].ToDecrypt = "";
 				VCArray[VCIndex(vc)].GotBalance = false;
 				VCArray[VCIndex(vc)].GotBalanceUC = false;
 				VCArray[VCIndex(vc)].GotBalanceList = false;
@@ -725,7 +805,9 @@ public class MainActivity extends Activity {
 		VCArray[VCIndex(vc)].PublicAddress = PublicAddress;
 		VCArray[VCIndex(vc)].Signature = "";
 		VCArray[VCIndex(vc)].Encrypted = "";
+		VCArray[VCIndex(vc)].ToEncrypt = "";
 		VCArray[VCIndex(vc)].Decrypted = "";
+		VCArray[VCIndex(vc)].ToDecrypt = "";
 		VCArray[VCIndex(vc)].OldPrivateKey = PrivateKey;
 		VCArray[VCIndex(vc)].PublicKey = "";
 		VCArray[VCIndex(vc)].GotBalance = false;
@@ -816,7 +898,9 @@ public class MainActivity extends Activity {
 		public String OldPrivateKey = null;
 		public String Signature = null;
 		public String Encrypted = null;
+		public String ToEncrypt = null;
 		public String Decrypted = null;
+		public String ToDecrypt = null;
 		public boolean GotBalance = false;
 		public boolean GotBalanceUC = false;
 		public boolean GotBalanceList = false;
