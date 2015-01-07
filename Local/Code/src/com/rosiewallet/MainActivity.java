@@ -345,6 +345,22 @@ public class MainActivity extends Activity {
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);
 			String SHARED = data.getStringExtra(Rivet.EXTRA_SHAREDKEY);
 			if (SHARED.equals("") == false ) {
+				Intent intent = new Intent(Rivet.RIVET_INTENT)
+					.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_HASH)
+					.putExtra(Rivet.EXTRA_PROVIDER, 1)
+					.putExtra(Rivet.EXTRA_VC, vc)
+					.putExtra(Rivet.EXTRA_HASH_ALGO, Rivet.HASH_SHA256)
+					.putExtra(Rivet.EXTRA_MESSAGE, SHARED);
+				if (intent.resolveActivity(getPackageManager()) != null) {
+					startActivityForResult(intent,Rivet.REQUEST_HASH);
+				}
+			}
+			else ToastIt("Encrypt/Decrypt Failed while creating Shared Key. Shared Key Blank");
+		}
+		else if (requestCode == Rivet.REQUEST_HASH && resultCode == RESULT_OK) { // HASH Result
+			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String HASH = data.getStringExtra(Rivet.EXTRA_MESSAGE);
+			if (HASH.equals("") == false ) {
 				boolean didIntent = false;
 				String Message = VCArray[VCIndex(vc)].ToEncrypt;
 				if (Message != null) {
@@ -353,8 +369,7 @@ public class MainActivity extends Activity {
 							.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_ENCRYPT)
 							.putExtra(Rivet.EXTRA_PROVIDER, 1) 
 							.putExtra(Rivet.EXTRA_VC, vc)
-							.putExtra("ALGO", "")
-							.putExtra(Rivet.EXTRA_KEY, SHARED)
+							.putExtra(Rivet.EXTRA_KEY, HASH)
 							.putExtra(Rivet.EXTRA_MESSAGE, Message);
 						if (intent.resolveActivity(getPackageManager()) != null) {
 							startActivityForResult(intent,Rivet.REQUEST_AES_ENCRYPT);
@@ -370,8 +385,7 @@ public class MainActivity extends Activity {
 								.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_DECRYPT)
 								.putExtra(Rivet.EXTRA_PROVIDER, 1) 
 								.putExtra(Rivet.EXTRA_VC, vc)
-								.putExtra("ALGO", "")
-								.putExtra(Rivet.EXTRA_KEY, SHARED)
+								.putExtra(Rivet.EXTRA_KEY, HASH)
 								.putExtra(Rivet.EXTRA_MESSAGE, Message);
 							if (intent.resolveActivity(getPackageManager()) != null) {
 								startActivityForResult(intent,Rivet.REQUEST_AES_DECRYPT);
@@ -382,7 +396,7 @@ public class MainActivity extends Activity {
 				}
 				if (didIntent == false) ToastIt("Encrypt/Decrypt Failed Message Blank");
 			}
-			else ToastIt("Encrypt/Decrypt Failed while creating Shared Key. Shared Key Blank");
+			else ToastIt("Encrypt/Decrypt Failed while creating Hash. Hash Blank");
 		}
 		else if (requestCode == Rivet.REQUEST_AES_ENCRYPT && resultCode == RESULT_OK) { // AES Encrypt
 			String vc = data.getStringExtra(Rivet.EXTRA_VC);

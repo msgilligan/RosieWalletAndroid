@@ -55,6 +55,7 @@ public class Rivet {
 	public static final String EXTRA_VERIFIED	= "Verified";
 	public static final String EXTRA_SHAREDKEY	= "SharedKey";
 	public static final String EXTRA_KEY		= "Key";
+	public static final String EXTRA_HASH_ALGO	= "HashAlgo";
 	// ECC Curves
 	public static final String CURVE_SECP192R1	= "SECP192R1";	/*!< 192-bits NIST curve  */
 	public static final String CURVE_SECP224R1	= "SECP224R1";	/*!< 224-bits NIST curve  */
@@ -74,7 +75,7 @@ public class Rivet {
 	// ALGOs
 	public static final String ECC_ALGO_AES		= "AES";
 	// HASHs
-	public static final String ECC_HASH_SHA256	= "SHA256";
-	public static final String ECC_HASH_SHA256x2	= "SHA256x2";
+	public static final String HASH_SHA256		= "SHA256";
+	public static final String HASH_SHA256x2	= "SHA256x2";
 	
 }
