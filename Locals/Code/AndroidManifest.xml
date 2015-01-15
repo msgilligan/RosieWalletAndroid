@@ -8,7 +8,7 @@
         android:minSdkVersion="14"
         android:targetSdkVersion="18" />
     <uses-permission android:name="android.permission.INTERNET"/>
-	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     
@@ -29,10 +29,10 @@
             </intent-filter>
         </activity>
 	<service
-            android:name="com.rosiewallet.GetBalance"
+            android:name="com.rosiewallet.WebGet"
             android:exported="false" >
             <intent-filter>
-                <action android:name="com.rosiewallet.GetBalance" />
+                <action android:name="com.rosiewallet.WebGet" />
             </intent-filter>
         </service>
     </application>

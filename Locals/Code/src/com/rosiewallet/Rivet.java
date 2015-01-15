@@ -34,6 +34,11 @@ public class Rivet {
 	public static final int REQUEST_HASH		= 7001; // Get a hash result
 	// Extra Strings
 	public static final String EXTRA_REQUEST	= "requestCode";
+	public static final String EXTRA_PROVIDER	= "ProviderID";
+	public static final String EXTRA_CALLID		= "CallId";
+	public static final String EXTRA_KEYNAME	= "KeyName";
+	public static final String EXTRA_KEYRECORD	= "KeyObject";
+	public static final String EXTRA_ERROR		= "ErrorMessage";
 	public static final String EXTRA_PUB		= "PUB";
 	public static final String EXTRA_PRV		= "PRV";
 	public static final String EXTRA_TOPUB		= "TOPUB";
@@ -41,8 +46,7 @@ public class Rivet {
 	public static final String EXTRA_FEE		= "FEE";
 	public static final String EXTRA_TRANS		= "TRANS";
 	public static final String EXTRA_SIGNED		= "SignedTrans";
-	public static final String EXTRA_PROVIDER	= "ProviderID";
-	public static final String EXTRA_KEYNAME	= "KeyName";
+	public static final String EXTRA_SIGNDONE	= "SignDone";
 	public static final String EXTRA_PUBLICDATA	= "PublicData";
 	public static final String EXTRA_SECUREDATA	= "SecureData";
 	public static final String EXTRA_ECC_CURVE	= "Curve";
