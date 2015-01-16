@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
 	private VirtualCoin[] VCArray = new VirtualCoin[4];
 	private String CurrentVC = new String("TBTC");
 	private boolean MovingWallet = false;
+	private static final String SP_UUID = "ca8ebc88-86e0-4f14-91e3-ea66037b3ab3-e8cd2413-a12a-469c-b4af-f61257500662";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -230,10 +231,8 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String) - Pass your assigned Service Provider ID.
-******		EXTRA_KEYNAME (String) - Keyname RivetAndroid uses to store your private key to be used to sign with.
-******		  or
-******		EXTRA_KEYRECORD (String) - Encrypted RivetAndroid Private Key Object that is used to sign with.
+******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
+******		EXTRA_KEYNAME (String Max 32) - Keyname RivetAndroid uses to store your private key to be used to sign with.
 ******		EXTRA_VC (String) - Virtual Coin being used for signing.  BTC = bitcoin, LTC = Litecoin, PPC = Peercoin
 ******		EXTRA_TOPUB (String) - Public Address to send virtual coin to.
 ******		EXTRA_AMT (String) - Amount of coin to send.
@@ -277,7 +276,7 @@ public class MainActivity extends Activity {
 ******	Returns:
 ******
 ******		EXTRA_CALLID (String) - Optional string passed without change from calling intent.
-******		EXTRA_SIGNATURE (String) - Signed Transaction Data to transmit to the virtual coin network.
+******		EXTRA_SIGNED (String) - Signed Transaction Data to transmit to the virtual coin network.
 ******		EXTRA_SIGNDONE (Boolean) - True = Ready to transmit the data to the virtual coin network.
 ******		           False = More signing requied for Multi-Sig Only
 ******		EXTRA_ERROR (String) - If values are blank then ERROR will contain why it was not able to sign.
@@ -288,7 +287,7 @@ public class MainActivity extends Activity {
 
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_VC_SIGNTRANS)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_VC, vc)
@@ -314,7 +313,7 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String) - Pass your assigned Service Provider ID.
+******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
 ******		EXTRA_ECC_CURVE (String) - ECDSA Curve to use see Rivet.Java for ECC Curves
 ******
 ******	Optional Field(s):
@@ -330,8 +329,8 @@ public class MainActivity extends Activity {
 ******	Returns:
 ******
 ******		EXTRA_CALLID (String) - Optional string passed without change from calling intent.
-******		EXTRA_KEYRECORD (String) - If EXTRA_KEYNAME was not set then this string is returned and must be used
-******				instead of EXTRA_KEYNAME in any subsequent calls.
+******		EXTRA_KEYNAME (String Max 32) - If this value was not set by the service provider
+******			then it returns a generate keyname.
 ******		EXTRA_ERROR (String) - If values are blank then ERROR will contain why it was not able to sign.
 ******
 ********************************************************************
@@ -343,7 +342,7 @@ public class MainActivity extends Activity {
 		VCArray[VCIndex(vc)].Loaded=false;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_CREATE)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_ECC_CURVE, Rivet.CURVE_SECP256K1);
@@ -359,30 +358,32 @@ public class MainActivity extends Activity {
 		}
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_VC_GETPUBPRV)
+			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_VC, vc)
 			.putExtra(Rivet.EXTRA_PRVKEY, VCArray[VCIndex(vc)].OldPrivateKey);
 		if (intent.resolveActivity(getPackageManager()) != null) {
 			startActivityForResult(intent,Rivet.REQUEST_VC_GETPUBPRV);
 		}
 	}
-	private void GetPublicKeyFromKeyName(String vc) {
+	private void GetPublicAddressFromKeyName(String vc) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_GETPUBPRV)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_CALLID,vc)
+			.putExtra(Rivet.EXTRA_VC,vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_VC_GETPUBPRV);
+			startActivityForResult(intent,Rivet.REQUEST_ECDSA_GETPUBPRV);
 		}
 	}
 	private void GetKey(String vc) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_GETKEY)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
-			.putExtra(Rivet.EXTRA_VC,vc);
+			.putExtra(Rivet.EXTRA_CALLID,vc);
 		if (intent.resolveActivity(getPackageManager()) != null) {
 			startActivityForResult(intent,Rivet.REQUEST_GETKEY);
 		}
@@ -391,7 +392,7 @@ public class MainActivity extends Activity {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ADDKEY)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_PUBLICDATA,VCArray[VCIndex(vc)].PublicKey)
 			.putExtra(Rivet.EXTRA_SECUREDATA,VCArray[VCIndex(vc)].OldPrivateKey);
@@ -404,7 +405,7 @@ public class MainActivity extends Activity {
 		VCArray[VCIndex(vc)].Loaded=false;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_DELETEKEY)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc);
 		if (intent.resolveActivity(getPackageManager()) != null) {
 			startActivityForResult(intent,Rivet.REQUEST_DELETEKEY);
@@ -428,10 +429,8 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String) - Pass your assigned Service Provider ID.
+******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
 ******		EXTRA_KEYNAME (String) - Keyname RivetAndroid uses to store your private key to be used to sign with.
-******		  or
-******		EXTRA_KEYRECORD (String) - Encrypted RivetAndroid Private Key Object that is used to sign with.
 ******		EXTRA_BYTEDATA (Byte[]) - Data as a raw byte array to be signed
 ******		  or
 ******		EXTRA_MESSAGE (String) - Data as a hex string to be signed
@@ -455,7 +454,7 @@ public class MainActivity extends Activity {
 
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_SIGN)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_MESSAGE, Message);
@@ -485,10 +484,8 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String) - Pass your assigned Service Provider ID
+******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
 ******		EXTRA_KEYNAME (String) - Keyname RivetAndroid uses to store your private key to be used to verify with
-******		  or
-******		EXTRA_KEYRECORD (String) - Encrypted RivetAndroid Private Key Object that is used to verify with
 ******		EXTRA_PUB (String) - Public Key to verify against
 ******		EXTRA_SIGNATURE (String) - Signature Data in hex string
 ******		EXTRA_BYTEDATA (Byte[]) - Data as a raw byte array to be verified
@@ -514,7 +511,7 @@ public class MainActivity extends Activity {
 
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_VERIFY)
-			.putExtra(Rivet.EXTRA_PROVIDER,1)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_PUB, PUB)
 			.putExtra(Rivet.EXTRA_SIGNATURE, SIG)
@@ -534,8 +531,8 @@ public class MainActivity extends Activity {
 		VCArray[VCIndex(vc)].ToEncrypt = Message; // Save For Later
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDH_SHARED)
-			.putExtra(Rivet.EXTRA_PROVIDER,1) 
-			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_TOPUB, TOPUB);
 		if (intent.resolveActivity(getPackageManager()) != null) {
@@ -553,8 +550,8 @@ public class MainActivity extends Activity {
 		VCArray[VCIndex(vc)].ToDecrypt = Message; // Save For Later
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
 			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDH_SHARED)
-			.putExtra(Rivet.EXTRA_PROVIDER,1) 
-			.putExtra(Rivet.EXTRA_VC, vc)
+			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_TOPUB, TOPUB);
 		if (intent.resolveActivity(getPackageManager()) != null) {
@@ -568,34 +565,35 @@ public class MainActivity extends Activity {
 			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
 			String vc = CallId;
 			String ErrorDesc = "ECDSA Create Error: ";
-			if (IsValidVC(vc)) {
-				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
-				if (ERROR.equals("")) {
-					String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
-					// String VCADDRESS = data.getStringExtra(Rivet.EXTRA_VC_PUBADDR);
-					if (PUBLICDATA.equals("") == false || VCADDRESS.equals("") == false) {
-						VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
-						VCArray[VCIndex(vc)].PublicAddress = ""; // VCADDRESS
-						VCArray[VCIndex(vc)].Signature = "";
-						VCArray[VCIndex(vc)].Encrypted = "";
-						VCArray[VCIndex(vc)].ToEncrypt = "";
-						VCArray[VCIndex(vc)].Decrypted = "";
-						VCArray[VCIndex(vc)].ToDecrypt = "";
-						VCArray[VCIndex(vc)].GotBalance = false;
-						VCArray[VCIndex(vc)].GotBalanceUC = false;
-						VCArray[VCIndex(vc)].GotBalanceList = false;
-						VCArray[VCIndex(vc)].Balance0Confirm = 0;
-						VCArray[VCIndex(vc)].Balance1Confirm = 0;
-						VCArray[VCIndex(vc)].fee = LoadFee(vc);
-						VCArray[VCIndex(vc)].Loaded = false;
-						// LoadWebpage("main.html");
-						GetPublicKeyFromKeyName("VC_"+vc);
+			if (vc != null) {
+				if (IsValidVC(vc)) {
+					String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
+					if (ERROR.equals("")) {
+						String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
+						if (PUBLICDATA.equals("") == false) {
+							VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
+							VCArray[VCIndex(vc)].PublicAddress = "Loading...";
+							VCArray[VCIndex(vc)].Signature = "";
+							VCArray[VCIndex(vc)].Encrypted = "";
+							VCArray[VCIndex(vc)].ToEncrypt = "";
+							VCArray[VCIndex(vc)].Decrypted = "";
+							VCArray[VCIndex(vc)].ToDecrypt = "";
+							VCArray[VCIndex(vc)].GotBalance = false;
+							VCArray[VCIndex(vc)].GotBalanceUC = false;
+							VCArray[VCIndex(vc)].GotBalanceList = false;
+							VCArray[VCIndex(vc)].Balance0Confirm = 0;
+							VCArray[VCIndex(vc)].Balance1Confirm = 0;
+							VCArray[VCIndex(vc)].fee = LoadFee(vc);
+							VCArray[VCIndex(vc)].Loaded = false;
+							GetPublicAddressFromKeyName(vc);
+						}
+						else ToastIt(ErrorDesc+"Public Key Data blank");
 					}
-					else ToastIt(ErrorDesc+"Public Key Data blank");
+					else ToastIt(ErrorDesc+ERROR);
 				}
-				else ToastIt(ErrorDesc+ERROR);
+				else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
 			}
-			else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);	
+			else ToastIt(ErrorDesc+"Virtual Coin null");
 		}
 		else if (requestCode == Rivet.REQUEST_ECDSA_SIGN && resultCode == RESULT_OK) { // Sign Message
 			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
@@ -633,23 +631,57 @@ public class MainActivity extends Activity {
 			else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
 		}
 		else if (requestCode == Rivet.REQUEST_ECDH_SHARED && resultCode == RESULT_OK) { // SharedKey/Agreement
-			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String vc = data.getStringExtra(Rivet.EXTRA_CALLID);
 			String SHARED = data.getStringExtra(Rivet.EXTRA_SHAREDKEY);
 			if (SHARED.equals("") == false ) {
-				Intent intent = new Intent(Rivet.RIVET_INTENT)
+				/*Intent intent = new Intent(Rivet.RIVET_INTENT)
 					.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_HASH)
-					.putExtra(Rivet.EXTRA_PROVIDER, 1)
-					.putExtra(Rivet.EXTRA_VC, vc)
+					.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+					.putExtra(Rivet.EXTRA_CALLID, vc)
 					.putExtra(Rivet.EXTRA_HASH_ALGO, Rivet.HASH_SHA256)
 					.putExtra(Rivet.EXTRA_MESSAGE, SHARED);
 				if (intent.resolveActivity(getPackageManager()) != null) {
 					startActivityForResult(intent,Rivet.REQUEST_HASH);
+				}*/
+				boolean didIntent = false;
+				String Message = VCArray[VCIndex(vc)].ToEncrypt;
+				if (Message != null) {
+					if (Message.equals("") == false) {
+						Intent intent = new Intent(Rivet.RIVET_INTENT)
+							.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_ENCRYPT)
+							.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+							.putExtra(Rivet.EXTRA_CALLID, vc)
+							.putExtra(Rivet.EXTRA_KEY, SHARED)
+							.putExtra(Rivet.EXTRA_MESSAGE, Message);
+						if (intent.resolveActivity(getPackageManager()) != null) {
+							startActivityForResult(intent,Rivet.REQUEST_AES_ENCRYPT);
+						}
+						didIntent = true;
+					}
 				}
+				if (didIntent == false) {
+					Message = VCArray[VCIndex(vc)].ToDecrypt;
+					if (Message != null) {
+						if (Message.equals("") == false) {
+							Intent intent = new Intent(Rivet.RIVET_INTENT)
+								.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_DECRYPT)
+								.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+								.putExtra(Rivet.EXTRA_CALLID, vc)
+								.putExtra(Rivet.EXTRA_KEY, SHARED)
+								.putExtra(Rivet.EXTRA_MESSAGE, Message);
+							if (intent.resolveActivity(getPackageManager()) != null) {
+								startActivityForResult(intent,Rivet.REQUEST_AES_DECRYPT);
+							}
+							didIntent = true;
+						}
+					}
+				}
+				if (didIntent == false) ToastIt("Encrypt/Decrypt Failed Message Blank");
 			}
 			else ToastIt("Encrypt/Decrypt Failed while creating Shared Key. Shared Key Blank");
 		}
 		else if (requestCode == Rivet.REQUEST_HASH && resultCode == RESULT_OK) { // HASH Result
-			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String vc = data.getStringExtra(Rivet.EXTRA_CALLID);
 			String HASH = data.getStringExtra(Rivet.EXTRA_MESSAGE);
 			if (HASH.equals("") == false ) {
 				boolean didIntent = false;
@@ -658,8 +690,8 @@ public class MainActivity extends Activity {
 					if (Message.equals("") == false) {
 						Intent intent = new Intent(Rivet.RIVET_INTENT)
 							.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_ENCRYPT)
-							.putExtra(Rivet.EXTRA_PROVIDER, 1) 
-							.putExtra(Rivet.EXTRA_VC, vc)
+							.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+							.putExtra(Rivet.EXTRA_CALLID, vc)
 							.putExtra(Rivet.EXTRA_KEY, HASH)
 							.putExtra(Rivet.EXTRA_MESSAGE, Message);
 						if (intent.resolveActivity(getPackageManager()) != null) {
@@ -674,8 +706,8 @@ public class MainActivity extends Activity {
 						if (Message.equals("") == false) {
 							Intent intent = new Intent(Rivet.RIVET_INTENT)
 								.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_DECRYPT)
-								.putExtra(Rivet.EXTRA_PROVIDER, 1) 
-								.putExtra(Rivet.EXTRA_VC, vc)
+								.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+								.putExtra(Rivet.EXTRA_CALLID, vc)
 								.putExtra(Rivet.EXTRA_KEY, HASH)
 								.putExtra(Rivet.EXTRA_MESSAGE, Message);
 							if (intent.resolveActivity(getPackageManager()) != null) {
@@ -690,48 +722,76 @@ public class MainActivity extends Activity {
 			else ToastIt("Encrypt/Decrypt Failed while creating Hash. Hash Blank");
 		}
 		else if (requestCode == Rivet.REQUEST_AES_ENCRYPT && resultCode == RESULT_OK) { // AES Encrypt
-			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String vc = data.getStringExtra(Rivet.EXTRA_VC); // CALLID);
 			String Encrypted = data.getStringExtra(Rivet.EXTRA_MESSAGE);
 			if (Encrypted.equals("") == false ) {
 				ToastIt("Message Encrypted");
 				VCArray[VCIndex(vc)].Encrypted = Encrypted;
 				VCArray[VCIndex(vc)].ToEncrypt = "";
 			}
-			else ToastIt("Encrypt Failed Returne Blank");
+			else ToastIt("Encrypt Failed Returned Blank");
 		}
 		else if (requestCode == Rivet.REQUEST_AES_DECRYPT && resultCode == RESULT_OK) { // AES Encrypt
-			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String vc = data.getStringExtra(Rivet.EXTRA_VC); // CALLID);
 			String Decrypted = data.getStringExtra(Rivet.EXTRA_MESSAGE);
 			if (Decrypted.equals("") == false ) {
 				ToastIt("Message Decrypted");
 				VCArray[VCIndex(vc)].Decrypted = Decrypted;
 				VCArray[VCIndex(vc)].ToDecrypt = "";
 			}
-			else ToastIt("Decrypt Failed Returne Blank");
+			else ToastIt("Decrypt Failed Returned Blank");
 		}
 		else if (requestCode == Rivet.REQUEST_GETKEY && resultCode == RESULT_OK) { // Got Wallet
-			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String vc = data.getStringExtra(Rivet.EXTRA_CALLID);
 			String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
-			String VCADDRESS = data.getStringExtra(Rivet.EXTRA_VC_PUBADDR);
-			if (new String("").equals(PUBLICDATA) == false ) {
-				VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
-				VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
-				VCArray[VCIndex(vc)].Signature = "";
-				VCArray[VCIndex(vc)].Encrypted = "";
-				VCArray[VCIndex(vc)].ToEncrypt = "";
-				VCArray[VCIndex(vc)].Decrypted = "";
-				VCArray[VCIndex(vc)].ToDecrypt = "";
-				VCArray[VCIndex(vc)].GotBalance = false;
-				VCArray[VCIndex(vc)].GotBalanceUC = false;
-				VCArray[VCIndex(vc)].GotBalanceList = false;
-				VCArray[VCIndex(vc)].Balance0Confirm = 0;
-				VCArray[VCIndex(vc)].Balance1Confirm = 0;
-				VCArray[VCIndex(vc)].fee = LoadFee(vc);
-				VCArray[VCIndex(vc)].Loaded = true;
+			String ErrorDesc = "Get Key: ";
+			if (vc != null && PUBLICDATA != null) {
+				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
+				if (ERROR.equals("")) {
+					if (!PUBLICDATA.equals("")) {
+						VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
+						VCArray[VCIndex(vc)].PublicAddress = "Loading...";
+						VCArray[VCIndex(vc)].Signature = "";
+						VCArray[VCIndex(vc)].Encrypted = "";
+						VCArray[VCIndex(vc)].ToEncrypt = "";
+						VCArray[VCIndex(vc)].Decrypted = "";
+						VCArray[VCIndex(vc)].ToDecrypt = "";
+						VCArray[VCIndex(vc)].GotBalance = false;
+						VCArray[VCIndex(vc)].GotBalanceUC = false;
+						VCArray[VCIndex(vc)].GotBalanceList = false;
+						VCArray[VCIndex(vc)].Balance0Confirm = 0;
+						VCArray[VCIndex(vc)].Balance1Confirm = 0;
+						VCArray[VCIndex(vc)].fee = LoadFee(vc);
+						// ToastIt("Got Public Key now getting address "+vc);
+						GetPublicAddressFromKeyName(vc);
+					}
+					else ToastIt(ErrorDesc+"PublicData is blank");
+				}
+				else ToastIt(ErrorDesc+ERROR);
 			}
+			// else ToastIt(ErrorDesc+"returned null values"); can occur if keys are not established yet
+		}
+		else if (requestCode == Rivet.REQUEST_ECDSA_GETPUBPRV && resultCode == RESULT_OK) { // VC Address from Private Key
+			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
+			String vc = CallId;
+			String ErrorDesc = "ECDSA Get Pub From Prv Error: ";
+			if (IsValidVC(vc)) {
+				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
+				if (ERROR.equals("")) {
+					String VCADDRESS = data.getStringExtra(Rivet.EXTRA_VC_PUBADDR);
+					if (VCADDRESS.equals("") == false) {
+						VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
+						VCArray[VCIndex(vc)].Loaded = true;
+						LoadWebpage("main.html");
+					}
+					else ToastIt(ErrorDesc+"Public Key Data blank");
+				}
+				else ToastIt(ErrorDesc+ERROR);
+			}
+			else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);	
 		}
 		else if (requestCode == Rivet.REQUEST_VC_GETPUBPRV && resultCode == RESULT_OK) { // Got PublicKey From Private
-			String vc = data.getStringExtra(Rivet.EXTRA_VC);
+			String vc = data.getStringExtra(Rivet.EXTRA_CALLID);
 			VCArray[VCIndex(vc)].PublicKey = data.getStringExtra(Rivet.EXTRA_PUBKEY);
 			AddKey(vc);
 		}
@@ -751,8 +811,8 @@ public class MainActivity extends Activity {
 				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
 				if (ERROR.equals("")) {
 					String SignedTrans = data.getStringExtra(Rivet.EXTRA_SIGNED);
-					String SignedDone = data.getStringExtra(Rivet.EXTRA_SIGNDONE);
-					if (SignedDone.equals("True")) {
+					boolean SignedDone = data.getBooleanExtra(Rivet.EXTRA_SIGNDONE,false);
+					if (SignedDone) {
 						ToastIt("Sending signed transaction");
 						String urlstr = "http://rosieswallet.com/api-coin-v1/sendtrans.php?coin="+ vc +
 								"&trans=" + SignedTrans;
