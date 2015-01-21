@@ -247,13 +247,6 @@ $(document).ready(function() {
 			
 		} catch(e) {}
 	});
-	$("#btn-message-dclipboard").click(function() {
-		try {
-			tocopy = $("#txt-message-dmessage").val();
-			AndroidHost.copyToClipBoard(tocopy);
-			
-		} catch(e) {}
-	});
 	$("#btn-copy-clipboard").click(function() {
 		try {
 			AndroidHost.copyToClipBoard(bitcoinaddress);
