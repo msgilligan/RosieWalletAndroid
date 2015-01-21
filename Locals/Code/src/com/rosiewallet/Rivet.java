@@ -2,7 +2,7 @@ package com.rosiewallet;
 
 public class Rivet {
 	// Intent
-	public static final String RIVET_INTENT		= "com.rivetz.RivetzAndroid";
+	public static final String RIVET_INTENT		= "com.rivetz.adaptor.RIVETZ_ANDROID";
 	// Request Codes: Virtual Coin specific functionality
 	public static final int REQUEST_VC_SIGNTRANS	= 1001; // Sign a bitcoin transaction
 	public static final int REQUEST_VC_GETPUBPRV	= 1999; // Depreciating: Get Public key from Private no service provider
