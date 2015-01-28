@@ -1,60 +1,36 @@
 package com.rosiewallet;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.BufferedInputStream;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.net.URLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.io.StringWriter;
-import java.io.PrintWriter;
-import java.text.DecimalFormat;
-import java.lang.Thread;
-import java.util.ArrayList;
-
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
-import android.content.IntentFilter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.content.SharedPreferences;
-import android.content.res.AssetFileDescriptor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.graphics.Bitmap.CompressFormat;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.text.Layout;
-import android.text.StaticLayout;
-import android.text.TextPaint;
 import android.util.Log;
-import android.view.View;
-import android.view.Window;
 import android.view.Menu;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.view.View;
 import android.webkit.WebChromeClient;
-import android.widget.ImageView;
+import android.webkit.WebView;
 import android.widget.Toast;
+
+import java.io.InputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity  {
 
 	private WebView webView;
 	private static final String TAG = MainActivity.class.getSimpleName();
@@ -84,136 +60,24 @@ public class MainActivity extends Activity {
 			LoadWebpage("main.html");
 		}
 	}
-	private void InitWallets() {	
-		VCArray[VCIndex("TBTC")] = new VirtualCoin();
-		VCArray[VCIndex("BTC")] = new VirtualCoin();
-		VCArray[VCIndex("LTC")] = new VirtualCoin();
-		VCArray[VCIndex("PPC")] = new VirtualCoin();
-	}
-	private void LoadWallets() {
-		ToastIt("Loading Wallets");
-		GetKey("TBTC");
-		GetKey("BTC");
-		GetKey("LTC");
-		GetKey("PPC");
-	}
-	private void MoveOldKeys() {
-		if (LocalWalletLoad("TBTC")) GetPublicKeyFromPrivate("TBTC");
-		if (LocalWalletLoad("BTC"))  GetPublicKeyFromPrivate("BTC");
-		if (LocalWalletLoad("LTC"))  GetPublicKeyFromPrivate("LTC");
-		if (LocalWalletLoad("PPC"))  GetPublicKeyFromPrivate("PPC");
-	}
-	public void ScanQRCode() {
-		try {
-			Intent intent = new Intent("com.google.zxing.client.android.SCAN")
-				.putExtra("SCAN_MODE", "QR_CODE_MODE");
-			if (intent.resolveActivity(getPackageManager()) != null) {
-				startActivityForResult(intent, 0);
-			}
-		} catch (Exception e) {    
-			Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
-			Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
-			startActivity(marketIntent);
+	public void doGetPointer(String mySPID, String keyName) {
+		Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_GETPOINTER)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.INSTRUCT_GETPOINTER);
 		}
 	}
-	public String ScanResult() {
-		String Retval = "";
-		if (new String("").equals(scanResult) == false) {
-			Retval = scanResult;
-			scanResult = "";
-		}
-		return Retval;
-	}
-	public void sendcoin(String vc, String Address, String Amount) {
-		if (!IsValidVC(vc)) return;
-		if (!VCArray[VCIndex(vc)].Loaded) return;
-		String SendTrans = "";
-		if (new String("").equals(VCArray[VCIndex(vc)].UnspentList)) {
-			MessageBox("No inputs to spend.  Your balance is zero.");
+	protected void resultGetPointer(int resultCode, Intent data) {
+		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		if (RivetResultCode != 0) {
+			ToastIt("GetPointer returned error: "+String.valueOf(RivetResultCode));
 			return;
 		}
-		if (new String("").equals(Address)) {
-			MessageBox("No Address specified.");
-			return;
+		if (resultCode == RESULT_OK) {
+			String devicePointer = data.getStringExtra(Rivet.EXTRA_DEVICEPOINTER);
+			ToastIt("Device Pointer is" + devicePointer);
 		}
-		if (VCArray[VCIndex(vc)].spending.size()>0) {
-			MessageBox("Spend coin already queued.  Please wait until spend coin result is received.");
-			return;
-		}
-		try {
-			Double TotalSpend = round(Double.parseDouble(Amount),8);
-			if (TotalSpend<=0.00) {
-				MessageBox("Amount must be set correctly.");
-				return;
-			}
-			Double AmtDue = TotalSpend;
-			Double AmtFee = round(VCArray[VCIndex(vc)].fee / 100000000.00,8);
-			AmtDue = round(AmtDue + AmtFee,8);
-			Double change = 0.00;
-			Double amtspendable = 0.00;
-			try {
-				ArrayList<String> ar = new ArrayList<String>();
-				JSONObject jObj = new JSONObject(VCArray[VCIndex(vc)].UnspentList);
-				JSONArray jArr = jObj.getJSONArray("unspent");
-				int transactions = jArr.length();
-				JSONObject jsonSendObj = new JSONObject();
-				JSONArray jsonSendArr = new JSONArray();
-				VCArray[VCIndex(vc)].spending = new ArrayList<String>();
-				for (int i = 0; i < transactions; i++) {
-					JSONObject trans = (JSONObject)jArr.get(i);
-					String tx = (String)trans.get("tx");
-					Double amt = round(Double.parseDouble((String)trans.get("amount")),8);
-					DecimalFormat df = new DecimalFormat("0.00000000");
-					String amtstr = df.format(amt);
-					int n = (Integer)trans.get("n");
-					int confirmations = (Integer)trans.get("confirmations");
-					String script = (String)trans.get("script");
-					String txcombo = tx + "-" + Integer.toString(n);
-					if (confirmations > 0 && VCArray[VCIndex(vc)].spent.indexOf(txcombo)==-1) {
-						if (ar.indexOf(txcombo)==-1) {
-							ar.add(txcombo);
-							amtspendable += amt;
-							if (AmtDue>0) {
-								if (round(AmtDue - amt,8) < 0) {
-									change = round(amt - AmtDue, 8);
-									AmtDue = 0.00;
-								}
-								else AmtDue = round(AmtDue - amt, 8);
-								JSONObject txObj = new JSONObject();
-								txObj.put("tx", tx);
-								txObj.put("amount", amtstr);
-								txObj.put("n", n);
-								txObj.put("confirmations", confirmations);
-								txObj.put("script", script);
-								jsonSendArr.put(txObj);
-								if (VCArray[VCIndex(vc)].spending.indexOf(txcombo)==-1)
-									VCArray[VCIndex(vc)].spending.add(txcombo);
-							}
-						}
-					}
-				}
-				jsonSendObj.put("unspent", jsonSendArr);
-				SendTrans = jsonSendObj.toString();
-			} catch(Exception e) {
-			}
-			DecimalFormat df = new DecimalFormat("0.00000000");
-			String amtspend = df.format(TotalSpend);
-			String amtfee = df.format(AmtFee);
-			String amttotal = df.format(TotalSpend+AmtFee);
-			String amtavail = df.format(amtspendable);
-			if (AmtDue>0) {
-				MessageBox("Balance too low for transaction.\n"+
-						"    Spend Amount: "+amtspend+"\n"+
-						"      Fee Amount: "+amtfee+"\n"+
-						"    Total Amount: "+amttotal+"\n"+
-						"Amount Available: "+amtavail+"\n"+
-						(VCArray[VCIndex(vc)].GotBalanceUC && VCArray[VCIndex(vc)].Balance0Confirm != 0.00 ? "You have an unconfirmed balance.  Please wait until this balance is confirmed." : "" ));
-			}
-			else {
-				SendCoinRivet(vc,Address,amtspend,amtfee,SendTrans);
-			}
-		}
-		catch(NumberFormatException e) {}
 	}
 	public void SendCoinRivet(String vc,String TOPUB,String AMT,String FEE,String TRANS) {
 		if (!IsValidVC(vc)) return;
@@ -222,7 +86,7 @@ public class MainActivity extends Activity {
 ********************************************************************
 ********************************************************************
 ******
-******	INTENT Example: Rivet.REQUEST_VC_SIGNTRANS
+******	INTENT Example: Rivet.INSTRUCT_SIGNTXN
 ******
 ******	Description:
 ******
@@ -231,7 +95,7 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
+******		EXTRA_SPID (String / UUID 32) - Pass your assigned Service Provider ID.
 ******		EXTRA_KEYNAME (String Max 32) - Keyname RivetAndroid uses to store your private key to be used to sign with.
 ******		EXTRA_VC (String) - Virtual Coin being used for signing.  BTC = bitcoin, LTC = Litecoin, PPC = Peercoin
 ******		EXTRA_TOPUB (String) - Public Address to send virtual coin to.
@@ -279,15 +143,15 @@ public class MainActivity extends Activity {
 ******		EXTRA_SIGNED (String) - Signed Transaction Data to transmit to the virtual coin network.
 ******		EXTRA_SIGNDONE (Boolean) - True = Ready to transmit the data to the virtual coin network.
 ******		           False = More signing requied for Multi-Sig Only
-******		EXTRA_ERROR (String) - If values are blank then ERROR will contain why it was not able to sign.
+******		EXTRA_RESULTCODE (int) - If values are blank then ERROR will contain why it was not able to sign.
 ******
 ********************************************************************
 ********************************************************************
 *******************************************************************/
 
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_VC_SIGNTRANS)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_SIGNTXN)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_VC, vc)
@@ -296,15 +160,54 @@ public class MainActivity extends Activity {
 			.putExtra(Rivet.EXTRA_FEE, FEE)
 			.putExtra(Rivet.EXTRA_TRANS, TRANS);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_VC_SIGNTRANS);
+			startActivityForResult(intent,Rivet.INSTRUCT_SIGNTXN);
 		}
 	}
+	protected void resultSendCoinRivet(int resultCode, Intent data) {
+		String ErrorDesc = "Sign Transaction Error: ";
+		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		if (RivetResultCode != 0) {
+			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
+			return;
+		}
+		if (resultCode != RESULT_OK) {
+			ToastIt(ErrorDesc+"ResultCode = "+String.valueOf(resultCode));
+			return;
+		}
+		String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
+		String vc = CallId;
+		if (!IsValidVC(vc)) {
+			ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
+			return;
+		}
+		String SignedTrans = data.getStringExtra(Rivet.EXTRA_SIGNED);
+		if (SignedTrans == null) {
+			ToastIt(ErrorDesc+"SignedTrans is null");
+			return;
+		}
+		boolean SignedDone = data.getBooleanExtra(Rivet.EXTRA_SIGNDONE,false);
+		if (!SignedDone) {
+			ToastIt(ErrorDesc+"Multi-sig signing not supported in RosieWallet yet.");
+			return;
+		}
+		ToastIt("Sending signed transaction");
+		String urlstr = "http://rosieswallet.com/api-coin-v1/sendtrans.php?coin="+ vc +
+				"&trans=" + SignedTrans;
+		Intent intentd = new Intent(this, WebGet.class)
+			.putExtra(WebGet.CALLID,vc)
+			.putExtra(WebGet.TYPE,"send")
+			.putExtra(WebGet.URL, urlstr);
+		startService(intentd);
+	}
+	public void CreateWallet(String vc) {
+		if (!IsValidVC(vc)) return;
+		VCArray[VCIndex(vc)].Loaded=false;
 
 /*******************************************************************
 ********************************************************************
 ********************************************************************
 ******
-******	INTENT Example: Rivet.REQUEST_ECDSA_CREATE
+******	INTENT Example: Rivet.INSTRUCT_CREATEKEY
 ******
 ******	Description:
 ******
@@ -313,7 +216,7 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
+******		EXTRA_SPID (String / UUID 32) - Pass your assigned Service Provider ID.
 ******		EXTRA_ECC_CURVE (String) - ECDSA Curve to use see Rivet.Java for ECC Curves
 ******
 ******	Optional Field(s):
@@ -331,24 +234,63 @@ public class MainActivity extends Activity {
 ******		EXTRA_CALLID (String) - Optional string passed without change from calling intent.
 ******		EXTRA_KEYNAME (String Max 32) - If this value was not set by the service provider
 ******			then it returns a generate keyname.
-******		EXTRA_ERROR (String) - If values are blank then ERROR will contain why it was not able to sign.
+******		EXTRA_RESULTCODE (int) - If values are blank then ERROR will contain why it was not able to sign.
 ******
 ********************************************************************
 ********************************************************************
 *******************************************************************/
 
-	public void CreateWallet(String vc) {
-		if (!IsValidVC(vc)) return;
-		VCArray[VCIndex(vc)].Loaded=false;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_CREATE)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_CREATEKEY)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_ECC_CURVE, Rivet.CURVE_SECP256K1);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_ECDSA_CREATE);
+			startActivityForResult(intent,Rivet.INSTRUCT_CREATEKEY);
 		}
+	}
+	public void resultECDSACreate(int resultCode, Intent data) {
+		String ErrorDesc = "ECDSA Create Error: ";
+		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		if (RivetResultCode != 0) {
+			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
+			return;
+		}
+		if (resultCode != RESULT_OK) {
+			ToastIt(ErrorDesc+"ResultCode = "+String.valueOf(resultCode));
+			return;
+		}
+		String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
+		String vc = CallId;
+		if (!IsValidVC(vc)) {
+			ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
+			return;
+		}
+		String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
+		if (PUBLICDATA == null) {
+			ToastIt(ErrorDesc+"Public Key is null");
+			return;
+		}
+		if (PUBLICDATA.equals("")) {
+			ToastIt(ErrorDesc+"Public Key is blank");
+			return;
+		}
+		VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
+		VCArray[VCIndex(vc)].PublicAddress = "Loading...";
+		VCArray[VCIndex(vc)].Signature = "";
+		VCArray[VCIndex(vc)].Encrypted = "";
+		VCArray[VCIndex(vc)].ToEncrypt = "";
+		VCArray[VCIndex(vc)].Decrypted = "";
+		VCArray[VCIndex(vc)].ToDecrypt = "";
+		VCArray[VCIndex(vc)].GotBalance = false;
+		VCArray[VCIndex(vc)].GotBalanceUC = false;
+		VCArray[VCIndex(vc)].GotBalanceList = false;
+		VCArray[VCIndex(vc)].Balance0Confirm = 0;
+		VCArray[VCIndex(vc)].Balance1Confirm = 0;
+		VCArray[VCIndex(vc)].fee = LoadFee(vc);
+		VCArray[VCIndex(vc)].Loaded = false;
+		GetPublicAddressFromKeyName(vc);
 	}
 	private void GetPublicKeyFromPrivate(String vc) {
 		if (!IsValidVC(vc)) return;
@@ -356,43 +298,37 @@ public class MainActivity extends Activity {
 			MovingWallet = true;
 			ToastIt("Moving Wallet to Rivet");
 		}
-		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_VC_GETPUBPRV)
-			.putExtra(Rivet.EXTRA_CALLID, vc)
-			.putExtra(Rivet.EXTRA_VC, vc)
-			.putExtra(Rivet.EXTRA_PRVKEY, VCArray[VCIndex(vc)].OldPrivateKey);
-		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_VC_GETPUBPRV);
-		}
+		VCArray[VCIndex(vc)].PublicKey = "";
+		AddKey(vc);
 	}
 	private void GetPublicAddressFromKeyName(String vc) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_GETPUBPRV)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_GETPUBPRV)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_CALLID,vc)
 			.putExtra(Rivet.EXTRA_VC,vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_ECDSA_GETPUBPRV);
+			startActivityForResult(intent,Rivet.INSTRUCT_GETPUBPRV);
 		}
 	}
 	private void GetKey(String vc) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_GETKEY)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_GETKEY)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_CALLID,vc);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_GETKEY);
+			startActivityForResult(intent,Rivet.INSTRUCT_GETKEY);
 		}
 	}
 	private void AddKey(String vc) {
 		if (!IsValidVC(vc)) return;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ADDKEY)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_ADDKEY)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_PUBLICDATA,VCArray[VCIndex(vc)].PublicKey)
 			.putExtra(Rivet.EXTRA_SECUREDATA,VCArray[VCIndex(vc)].OldPrivateKey);
@@ -404,11 +340,11 @@ public class MainActivity extends Activity {
 		if (!IsValidVC(vc)) return;
 		VCArray[VCIndex(vc)].Loaded=false;
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_DELETEKEY)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_DELETEKEY)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_DELETEKEY);
+			startActivityForResult(intent,Rivet.INSTRUCT_DELETEKEY);
 		}
 	}
 	public void signmessage(String vc,String Message) {
@@ -420,7 +356,7 @@ public class MainActivity extends Activity {
 ********************************************************************
 ********************************************************************
 ******
-******	INTENT Example: Rivet.REQUEST_ECDSA_SIGN
+******	INTENT Example: Rivet.INSTRUCT_SIGN
 ******
 ******	Description:
 ******
@@ -429,7 +365,7 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
+******		EXTRA_SPID (String / UUID 32) - Pass your assigned Service Provider ID.
 ******		EXTRA_KEYNAME (String) - Keyname RivetAndroid uses to store your private key to be used to sign with.
 ******		EXTRA_BYTEDATA (Byte[]) - Data as a raw byte array to be signed
 ******		  or
@@ -446,21 +382,50 @@ public class MainActivity extends Activity {
 ******
 ******		EXTRA_CALLID (String) - Optional string passed without change from calling intent.
 ******		EXTRA_SIGNATURE (String) - Signature Data in hex string
-******		EXTRA_ERROR (String) - If values are blank then ERROR will contain why it was not able to sign.
+******		EXTRA_RESULTCODE (int) - If values are blank then ERROR will contain why it was not able to sign.
 ******
 ********************************************************************
 ********************************************************************
 *******************************************************************/
 
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_SIGN)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_SIGN)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_MESSAGE, Message);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_ECDSA_SIGN);
+			startActivityForResult(intent,Rivet.INSTRUCT_SIGN);
 		}
+	}
+	public void resultsignmessage(int resultCode, Intent data) {
+		String ErrorDesc = "ECDSA Sign Error: ";
+		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		if (RivetResultCode != 0) {
+			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
+			return;
+		}
+		if (resultCode != RESULT_OK) {
+			ToastIt(ErrorDesc+"ResultCode = "+String.valueOf(resultCode));
+			return;
+		}
+		String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
+		String vc = CallId;
+		if (!IsValidVC(vc)) {
+			ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
+			return;
+		}
+		String SIG = data.getStringExtra(Rivet.EXTRA_SIGNATURE);
+		if (SIG == null) {
+			ToastIt(ErrorDesc+"Signature is null");
+			return;
+		}
+		if (SIG.equals("")) {
+			ToastIt(ErrorDesc+"Signature is blank");
+			return;
+		}
+		VCArray[VCIndex(vc)].Signature = SIG;
+		ToastIt("Message Signed");
 	}
 	public void verifymessage(String vc, String PUB, String SIG, String Message) {
 		if (!IsValidVC(vc)) return;
@@ -475,7 +440,7 @@ public class MainActivity extends Activity {
 ********************************************************************
 ********************************************************************
 ******
-******	INTENT Example: Rivet.REQUEST_ECDSA_VERIFY
+******	INTENT Example: Rivet.INSTRUCT_VERIFY
 ******
 ******	Description:
 ******
@@ -484,7 +449,7 @@ public class MainActivity extends Activity {
 ******
 ******	Required Field(s):
 ******
-******		EXTRA_PROVIDER (String / UUID 32) - Pass your assigned Service Provider ID.
+******		EXTRA_SPID (String / UUID 32) - Pass your assigned Service Provider ID.
 ******		EXTRA_KEYNAME (String) - Keyname RivetAndroid uses to store your private key to be used to verify with
 ******		EXTRA_PUB (String) - Public Key to verify against
 ******		EXTRA_SIGNATURE (String) - Signature Data in hex string
@@ -503,21 +468,21 @@ public class MainActivity extends Activity {
 ******
 ******		EXTRA_CALLID (String) - Optional string passed without change from calling intent.
 ******		EXTRA_SIGNATURE (String) - Signature Data in hex string
-******		EXTRA_ERROR (String) - If values are blank then ERROR will contain why it was not able to sign.
+******		EXTRA_RESULTCODE (int) - If values are blank then ERROR will contain why it was not able to sign.
 ******
 ********************************************************************
 ********************************************************************
 *******************************************************************/
 
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDSA_VERIFY)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.INSTRUCT_VERIFY)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_PUB, PUB)
 			.putExtra(Rivet.EXTRA_SIGNATURE, SIG)
 			.putExtra(Rivet.EXTRA_MESSAGE, Message);
 		if (intent.resolveActivity(getPackageManager()) != null) {
-			startActivityForResult(intent,Rivet.REQUEST_ECDSA_VERIFY);
+			startActivityForResult(intent,Rivet.INSTRUCT_VERIFY);
 		}
 	}
 	public void encryptmessage(String vc, String TOPUB, String Message) {
@@ -530,8 +495,8 @@ public class MainActivity extends Activity {
 		if (Message.equals("")) return;
 		VCArray[VCIndex(vc)].ToEncrypt = Message; // Save For Later
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDH_SHARED)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_ECDH_SHARED)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID) 
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_TOPUB, TOPUB);
@@ -549,8 +514,8 @@ public class MainActivity extends Activity {
 		if (Message.equals("")) return;
 		VCArray[VCIndex(vc)].ToDecrypt = Message; // Save For Later
 		Intent intent = new Intent(Rivet.RIVET_INTENT)
-			.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_ECDH_SHARED)
-			.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_ECDH_SHARED)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID) 
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
 			.putExtra(Rivet.EXTRA_TOPUB, TOPUB);
@@ -558,127 +523,106 @@ public class MainActivity extends Activity {
 			startActivityForResult(intent,Rivet.REQUEST_ECDH_SHARED);
 		}
 	}
+	protected void resultECDHShared(int resultCode, Intent data) {
+		String ErrorDesc = "ECDH Shared Key Error: ";
+		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		if (RivetResultCode != 0) {
+			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
+			return;
+		}
+		if (resultCode != RESULT_OK) {
+			ToastIt(ErrorDesc+"ResultCode = "+String.valueOf(resultCode));
+			return;
+		}
+		String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
+		String vc = CallId;
+		if (!IsValidVC(vc)) {
+			ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
+			return;
+		}
+		String SHARED = data.getStringExtra(Rivet.EXTRA_SHAREDKEY);
+		if (SHARED == null) {
+			ToastIt(ErrorDesc+"SHARED is null");
+			return;
+		}
+		if (SHARED.equals("")) {
+			ToastIt(ErrorDesc+"SHARED is blank");
+			return;
+		}
+		/*Intent intent = new Intent(Rivet.RIVET_INTENT)
+			.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_HASH)
+			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
+			.putExtra(Rivet.EXTRA_CALLID, vc)
+			.putExtra(Rivet.EXTRA_HASH_ALGO, Rivet.HASH_SHA256)
+			.putExtra(Rivet.EXTRA_MESSAGE, SHARED);
+		if (intent.resolveActivity(getPackageManager()) != null) {
+			startActivityForResult(intent,Rivet.REQUEST_HASH);
+		}*/
+		boolean didIntent = false;
+		String Message = VCArray[VCIndex(vc)].ToEncrypt;
+		if (Message != null) {
+			if (Message.equals("") == false) {
+				Intent intent = new Intent(Rivet.RIVET_INTENT)
+					.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_AES_ENCRYPT)
+					.putExtra(Rivet.EXTRA_SPID, SP_UUID) 
+					.putExtra(Rivet.EXTRA_CALLID, vc)
+					.putExtra(Rivet.EXTRA_KEY, SHARED)
+					.putExtra(Rivet.EXTRA_MESSAGE, Message);
+				if (intent.resolveActivity(getPackageManager()) != null) {
+					startActivityForResult(intent,Rivet.REQUEST_AES_ENCRYPT);
+				}
+				didIntent = true;
+			}
+		}
+		if (didIntent == false) {
+			Message = VCArray[VCIndex(vc)].ToDecrypt;
+			if (Message != null) {
+				if (Message.equals("") == false) {
+					Intent intent = new Intent(Rivet.RIVET_INTENT)
+						.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_AES_DECRYPT)
+						.putExtra(Rivet.EXTRA_SPID, SP_UUID) 
+						.putExtra(Rivet.EXTRA_CALLID, vc)
+						.putExtra(Rivet.EXTRA_KEY, SHARED)
+						.putExtra(Rivet.EXTRA_MESSAGE, Message);
+					if (intent.resolveActivity(getPackageManager()) != null) {
+						startActivityForResult(intent,Rivet.REQUEST_AES_DECRYPT);
+					}
+					didIntent = true;
+				}
+			}
+		}
+		if (didIntent == false) ToastIt("Encrypt/Decrypt Failed Message Blank");
+	}
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		if (requestCode == Rivet.REQUEST_ECDSA_CREATE && resultCode == RESULT_OK) { // Create Wallet
-			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
-			String vc = CallId;
-			String ErrorDesc = "ECDSA Create Error: ";
-			if (vc != null) {
-				if (IsValidVC(vc)) {
-					String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
-					if (ERROR.equals("")) {
-						String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
-						if (PUBLICDATA.equals("") == false) {
-							VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
-							VCArray[VCIndex(vc)].PublicAddress = "Loading...";
-							VCArray[VCIndex(vc)].Signature = "";
-							VCArray[VCIndex(vc)].Encrypted = "";
-							VCArray[VCIndex(vc)].ToEncrypt = "";
-							VCArray[VCIndex(vc)].Decrypted = "";
-							VCArray[VCIndex(vc)].ToDecrypt = "";
-							VCArray[VCIndex(vc)].GotBalance = false;
-							VCArray[VCIndex(vc)].GotBalanceUC = false;
-							VCArray[VCIndex(vc)].GotBalanceList = false;
-							VCArray[VCIndex(vc)].Balance0Confirm = 0;
-							VCArray[VCIndex(vc)].Balance1Confirm = 0;
-							VCArray[VCIndex(vc)].fee = LoadFee(vc);
-							VCArray[VCIndex(vc)].Loaded = false;
-							GetPublicAddressFromKeyName(vc);
-						}
-						else ToastIt(ErrorDesc+"Public Key Data blank");
-					}
-					else ToastIt(ErrorDesc+ERROR);
-				}
-				else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
-			}
-			else ToastIt(ErrorDesc+"Virtual Coin null");
+		if (requestCode == Rivet.INSTRUCT_GETPOINTER)
+			resultGetPointer(resultCode, data);
+		if (requestCode == Rivet.INSTRUCT_CREATEKEY && resultCode == RESULT_OK) { // Create Wallet
+			resultECDSACreate(resultCode, data);
 		}
-		else if (requestCode == Rivet.REQUEST_ECDSA_SIGN && resultCode == RESULT_OK) { // Sign Message
-			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
-			String vc = CallId;
-			String ErrorDesc = "ECDSA Sign Error: ";
-			if (IsValidVC(vc)) {
-				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
-				if (ERROR.equals("")) {
-					String SIG = data.getStringExtra(Rivet.EXTRA_SIGNATURE);
-					if (SIG.equals("") == false ) {
-						VCArray[VCIndex(vc)].Signature = SIG;
-						ToastIt("Message Signed");
-					}
-					else ToastIt(ErrorDesc+"Signature is blank");
-				}
-				else ToastIt(ErrorDesc+ERROR);
-			}
-			else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
+		else if (requestCode == Rivet.INSTRUCT_SIGN && resultCode == RESULT_OK) { // Sign Message
+			resultsignmessage(resultCode, data);
 		}
-		else if (requestCode == Rivet.REQUEST_ECDSA_VERIFY && resultCode == RESULT_OK) { // Verify Message
+		else if (requestCode == Rivet.INSTRUCT_VERIFY && resultCode == RESULT_OK) { // Verify Message
 			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
 			String vc = CallId;
 			String ErrorDesc = "ECDSA Verify Error: ";
 			if (IsValidVC(vc)) {
-				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
-				if (ERROR.equals("")) {
+				int ERROR = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+				if (ERROR == 0) {
 					boolean VERIFIED = data.getBooleanExtra(Rivet.EXTRA_VERIFIED,false); // Always default to false
 					if (VERIFIED)
 						ToastIt("Signature Verified");
 					else
 						ToastIt("Signature was not verified.");
 				}
-				else ToastIt(ErrorDesc+ERROR);
+				else ToastIt(ErrorDesc+String.valueOf(ERROR));
 			}
 			else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
 		}
 		else if (requestCode == Rivet.REQUEST_ECDH_SHARED && resultCode == RESULT_OK) { // SharedKey/Agreement
-			String vc = data.getStringExtra(Rivet.EXTRA_CALLID);
-			String SHARED = data.getStringExtra(Rivet.EXTRA_SHAREDKEY);
-			if (SHARED.equals("") == false ) {
-				/*Intent intent = new Intent(Rivet.RIVET_INTENT)
-					.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_HASH)
-					.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID)
-					.putExtra(Rivet.EXTRA_CALLID, vc)
-					.putExtra(Rivet.EXTRA_HASH_ALGO, Rivet.HASH_SHA256)
-					.putExtra(Rivet.EXTRA_MESSAGE, SHARED);
-				if (intent.resolveActivity(getPackageManager()) != null) {
-					startActivityForResult(intent,Rivet.REQUEST_HASH);
-				}*/
-				boolean didIntent = false;
-				String Message = VCArray[VCIndex(vc)].ToEncrypt;
-				if (Message != null) {
-					if (Message.equals("") == false) {
-						Intent intent = new Intent(Rivet.RIVET_INTENT)
-							.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_ENCRYPT)
-							.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
-							.putExtra(Rivet.EXTRA_CALLID, vc)
-							.putExtra(Rivet.EXTRA_KEY, SHARED)
-							.putExtra(Rivet.EXTRA_MESSAGE, Message);
-						if (intent.resolveActivity(getPackageManager()) != null) {
-							startActivityForResult(intent,Rivet.REQUEST_AES_ENCRYPT);
-						}
-						didIntent = true;
-					}
-				}
-				if (didIntent == false) {
-					Message = VCArray[VCIndex(vc)].ToDecrypt;
-					if (Message != null) {
-						if (Message.equals("") == false) {
-							Intent intent = new Intent(Rivet.RIVET_INTENT)
-								.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_DECRYPT)
-								.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
-								.putExtra(Rivet.EXTRA_CALLID, vc)
-								.putExtra(Rivet.EXTRA_KEY, SHARED)
-								.putExtra(Rivet.EXTRA_MESSAGE, Message);
-							if (intent.resolveActivity(getPackageManager()) != null) {
-								startActivityForResult(intent,Rivet.REQUEST_AES_DECRYPT);
-							}
-							didIntent = true;
-						}
-					}
-				}
-				if (didIntent == false) ToastIt("Encrypt/Decrypt Failed Message Blank");
-			}
-			else ToastIt("Encrypt/Decrypt Failed while creating Shared Key. Shared Key Blank");
+			resultECDHShared(resultCode, data);
 		}
 		else if (requestCode == Rivet.REQUEST_HASH && resultCode == RESULT_OK) { // HASH Result
 			String vc = data.getStringExtra(Rivet.EXTRA_CALLID);
@@ -689,8 +633,8 @@ public class MainActivity extends Activity {
 				if (Message != null) {
 					if (Message.equals("") == false) {
 						Intent intent = new Intent(Rivet.RIVET_INTENT)
-							.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_ENCRYPT)
-							.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+							.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_AES_ENCRYPT)
+							.putExtra(Rivet.EXTRA_SPID, SP_UUID) 
 							.putExtra(Rivet.EXTRA_CALLID, vc)
 							.putExtra(Rivet.EXTRA_KEY, HASH)
 							.putExtra(Rivet.EXTRA_MESSAGE, Message);
@@ -705,8 +649,8 @@ public class MainActivity extends Activity {
 					if (Message != null) {
 						if (Message.equals("") == false) {
 							Intent intent = new Intent(Rivet.RIVET_INTENT)
-								.putExtra(Rivet.EXTRA_REQUEST, Rivet.REQUEST_AES_DECRYPT)
-								.putExtra(Rivet.EXTRA_PROVIDER, SP_UUID) 
+								.putExtra(Rivet.EXTRA_INSTRUCT, Rivet.REQUEST_AES_DECRYPT)
+								.putExtra(Rivet.EXTRA_SPID, SP_UUID) 
 								.putExtra(Rivet.EXTRA_CALLID, vc)
 								.putExtra(Rivet.EXTRA_KEY, HASH)
 								.putExtra(Rivet.EXTRA_MESSAGE, Message);
@@ -741,13 +685,13 @@ public class MainActivity extends Activity {
 			}
 			else ToastIt("Decrypt Failed Returned Blank");
 		}
-		else if (requestCode == Rivet.REQUEST_GETKEY && resultCode == RESULT_OK) { // Got Wallet
+		else if (requestCode == Rivet.INSTRUCT_GETKEY && resultCode == RESULT_OK) { // Got Wallet
 			String vc = data.getStringExtra(Rivet.EXTRA_CALLID);
 			String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
 			String ErrorDesc = "Get Key: ";
 			if (vc != null && PUBLICDATA != null) {
-				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
-				if (ERROR.equals("")) {
+				int ERROR = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+				if (ERROR == 0) {
 					if (!PUBLICDATA.equals("")) {
 						VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
 						VCArray[VCIndex(vc)].PublicAddress = "Loading...";
@@ -771,13 +715,13 @@ public class MainActivity extends Activity {
 			}
 			// else ToastIt(ErrorDesc+"returned null values"); can occur if keys are not established yet
 		}
-		else if (requestCode == Rivet.REQUEST_ECDSA_GETPUBPRV && resultCode == RESULT_OK) { // VC Address from Private Key
+		else if (requestCode == Rivet.INSTRUCT_GETPUBPRV && resultCode == RESULT_OK) { // VC Address from Private Key
 			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
 			String vc = CallId;
 			String ErrorDesc = "ECDSA Get Pub From Prv Error: ";
 			if (IsValidVC(vc)) {
-				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
-				if (ERROR.equals("")) {
+				int ERROR = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+				if (ERROR == 0) {
 					String VCADDRESS = data.getStringExtra(Rivet.EXTRA_VC_PUBADDR);
 					if (VCADDRESS.equals("") == false) {
 						VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
@@ -786,7 +730,7 @@ public class MainActivity extends Activity {
 					}
 					else ToastIt(ErrorDesc+"Public Key Data blank");
 				}
-				else ToastIt(ErrorDesc+ERROR);
+				else ToastIt(ErrorDesc+String.valueOf(ERROR));
 			}
 			else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);	
 		}
@@ -803,32 +747,9 @@ public class MainActivity extends Activity {
 				}
 			}
 		}
-		else if (requestCode == Rivet.REQUEST_VC_SIGNTRANS && resultCode == RESULT_OK) { // Got Signed Transaction
-			String CallId = data.getStringExtra(Rivet.EXTRA_CALLID);
-			String vc = CallId;
-			String ErrorDesc = "Sign Transaction Error: ";
-			if (IsValidVC(vc)) {
-				String ERROR = data.getStringExtra(Rivet.EXTRA_ERROR);
-				if (ERROR.equals("")) {
-					String SignedTrans = data.getStringExtra(Rivet.EXTRA_SIGNED);
-					boolean SignedDone = data.getBooleanExtra(Rivet.EXTRA_SIGNDONE,false);
-					if (SignedDone) {
-						ToastIt("Sending signed transaction");
-						String urlstr = "http://rosieswallet.com/api-coin-v1/sendtrans.php?coin="+ vc +
-								"&trans=" + SignedTrans;
-						Intent intentd = new Intent(this, WebGet.class)
-							.putExtra(WebGet.CALLID,vc)
-							.putExtra(WebGet.TYPE,"send")
-							.putExtra(WebGet.URL, urlstr);
-						startService(intentd);
-					}
-					else ToastIt(ErrorDesc+"Multi-sig signing not supported in RosieWallet yet.");
-				}
-				else ToastIt(ErrorDesc+ERROR);
-			}
-			else ToastIt(ErrorDesc+"Virtual Coin invalid: "+vc);
-		}
-		else if (requestCode == Rivet.REQUEST_DELETEKEY && resultCode == RESULT_OK) { // Got Delete Key
+		else if (requestCode == Rivet.INSTRUCT_SIGNTXN)
+			resultSendCoinRivet(resultCode, data);
+		else if (requestCode == Rivet.INSTRUCT_DELETEKEY && resultCode == RESULT_OK) { // Got Delete Key
 			ToastIt("Wallet Deleted");
 		}
 		else if (requestCode == 0) {
@@ -933,6 +854,7 @@ public class MainActivity extends Activity {
     		});
 	}
 	public boolean IsValidVC(String vc) {
+		if (vc == null) return false;
 		if (new String("TBTC").equals(vc)) return true;
 		if (new String("BTC").equals(vc)) return true;
 		if (new String("LTC").equals(vc)) return true;
@@ -1210,6 +1132,137 @@ public class MainActivity extends Activity {
 		if (new String("LTC").equals(vc)) return 2;
 		if (new String("PPC").equals(vc)) return 3;
 		return 0; // default to TBTC
+	}
+	private void InitWallets() {	
+		VCArray[VCIndex("TBTC")] = new VirtualCoin();
+		VCArray[VCIndex("BTC")] = new VirtualCoin();
+		VCArray[VCIndex("LTC")] = new VirtualCoin();
+		VCArray[VCIndex("PPC")] = new VirtualCoin();
+	}
+	private void LoadWallets() {
+		ToastIt("Loading Wallets");
+		GetKey("TBTC");
+		GetKey("BTC");
+		GetKey("LTC");
+		GetKey("PPC");
+	}
+	private void MoveOldKeys() {
+		if (LocalWalletLoad("TBTC")) GetPublicKeyFromPrivate("TBTC");
+		if (LocalWalletLoad("BTC"))  GetPublicKeyFromPrivate("BTC");
+		if (LocalWalletLoad("LTC"))  GetPublicKeyFromPrivate("LTC");
+		if (LocalWalletLoad("PPC"))  GetPublicKeyFromPrivate("PPC");
+	}
+	public void ScanQRCode() {
+		try {
+			Intent intent = new Intent("com.google.zxing.client.android.SCAN")
+				.putExtra("SCAN_MODE", "QR_CODE_MODE");
+			if (intent.resolveActivity(getPackageManager()) != null) {
+				startActivityForResult(intent, 0);
+			}
+		} catch (Exception e) {    
+			Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
+			Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
+			startActivity(marketIntent);
+		}
+	}
+	public String ScanResult() {
+		String Retval = "";
+		if (new String("").equals(scanResult) == false) {
+			Retval = scanResult;
+			scanResult = "";
+		}
+		return Retval;
+	}
+	public void sendcoin(String vc, String Address, String Amount) {
+		if (!IsValidVC(vc)) return;
+		if (!VCArray[VCIndex(vc)].Loaded) return;
+		String SendTrans = "";
+		if (new String("").equals(VCArray[VCIndex(vc)].UnspentList)) {
+			MessageBox("No inputs to spend.  Your balance is zero.");
+			return;
+		}
+		if (new String("").equals(Address)) {
+			MessageBox("No Address specified.");
+			return;
+		}
+		if (VCArray[VCIndex(vc)].spending.size()>0) {
+			MessageBox("Spend coin already queued.  Please wait until spend coin result is received.");
+			return;
+		}
+		try {
+			Double TotalSpend = round(Double.parseDouble(Amount),8);
+			if (TotalSpend<=0.00) {
+				MessageBox("Amount must be set correctly.");
+				return;
+			}
+			Double AmtDue = TotalSpend;
+			Double AmtFee = round(VCArray[VCIndex(vc)].fee / 100000000.00,8);
+			AmtDue = round(AmtDue + AmtFee,8);
+			Double change = 0.00;
+			Double amtspendable = 0.00;
+			try {
+				ArrayList<String> ar = new ArrayList<String>();
+				JSONObject jObj = new JSONObject(VCArray[VCIndex(vc)].UnspentList);
+				JSONArray jArr = jObj.getJSONArray("unspent");
+				int transactions = jArr.length();
+				JSONObject jsonSendObj = new JSONObject();
+				JSONArray jsonSendArr = new JSONArray();
+				VCArray[VCIndex(vc)].spending = new ArrayList<String>();
+				for (int i = 0; i < transactions; i++) {
+					JSONObject trans = (JSONObject)jArr.get(i);
+					String tx = (String)trans.get("tx");
+					Double amt = round(Double.parseDouble((String)trans.get("amount")),8);
+					DecimalFormat df = new DecimalFormat("0.00000000");
+					String amtstr = df.format(amt);
+					int n = (Integer)trans.get("n");
+					int confirmations = (Integer)trans.get("confirmations");
+					String script = (String)trans.get("script");
+					String txcombo = tx + "-" + Integer.toString(n);
+					if (confirmations > 0 && VCArray[VCIndex(vc)].spent.indexOf(txcombo)==-1) {
+						if (ar.indexOf(txcombo)==-1) {
+							ar.add(txcombo);
+							amtspendable += amt;
+							if (AmtDue>0) {
+								if (round(AmtDue - amt,8) < 0) {
+									change = round(amt - AmtDue, 8);
+									AmtDue = 0.00;
+								}
+								else AmtDue = round(AmtDue - amt, 8);
+								JSONObject txObj = new JSONObject();
+								txObj.put("tx", tx);
+								txObj.put("amount", amtstr);
+								txObj.put("n", n);
+								txObj.put("confirmations", confirmations);
+								txObj.put("script", script);
+								jsonSendArr.put(txObj);
+								if (VCArray[VCIndex(vc)].spending.indexOf(txcombo)==-1)
+									VCArray[VCIndex(vc)].spending.add(txcombo);
+							}
+						}
+					}
+				}
+				jsonSendObj.put("unspent", jsonSendArr);
+				SendTrans = jsonSendObj.toString();
+			} catch(Exception e) {
+			}
+			DecimalFormat df = new DecimalFormat("0.00000000");
+			String amtspend = df.format(TotalSpend);
+			String amtfee = df.format(AmtFee);
+			String amttotal = df.format(TotalSpend+AmtFee);
+			String amtavail = df.format(amtspendable);
+			if (AmtDue>0) {
+				MessageBox("Balance too low for transaction.\n"+
+						"    Spend Amount: "+amtspend+"\n"+
+						"      Fee Amount: "+amtfee+"\n"+
+						"    Total Amount: "+amttotal+"\n"+
+						"Amount Available: "+amtavail+"\n"+
+						(VCArray[VCIndex(vc)].GotBalanceUC && VCArray[VCIndex(vc)].Balance0Confirm != 0.00 ? "You have an unconfirmed balance.  Please wait until this balance is confirmed." : "" ));
+			}
+			else {
+				SendCoinRivet(vc,Address,amtspend,amtfee,SendTrans);
+			}
+		}
+		catch(NumberFormatException e) {}
 	}
 	private class VirtualCoin {
 		public String PublicAddress = null;

@@ -3,42 +3,41 @@ package com.rosiewallet;
 public class Rivet {
 	// Intent
 	public static final String RIVET_INTENT		= "com.rivetz.adaptor.RIVETZ_ANDROID";
+	// Request Codes: Main
+	public static final int INSTRUCT_GETPOINTER	= 0001; // Get Pointer
+	public static final int INSTRUCT_REGISTERPROVIDER = 0002; // Service provider pairs with device
+	public static final int INSTRUCT_EXECUTE	= 0003; // Execute a server signed instruction
 	// Request Codes: Virtual Coin specific functionality
-	public static final int REQUEST_VC_SIGNTRANS	= 1001; // Sign a bitcoin transaction
-	public static final int REQUEST_VC_GETPUBPRV	= 1999; // Depreciating: Get Public key from Private no service provider
+	public static final int INSTRUCT_SIGNTXN	= 1001; // Sign a bitcoin transaction
+	public static final int REQUEST_VC_GETPUBPRV	= 1999; // DEPRECIATING: Get Public key from Private no service provider
 	// Request Codes: Service Provider key functionality for storing keys in RivetAndroid
-	public static final int REQUEST_ADDKEY		= 2001; // Can also be used to update a key
-	public static final int REQUEST_GETKEY		= 2002; // Get Key
-	public static final int REQUEST_DELETEKEY	= 2003; // Delete a Key
-	public static final int REQUEST_ENUMKEYS	= 2004; // Get Next Key Enumerating through them.
-	// Request Codes: ECDSA
-	public static final int REQUEST_ECDSA_CREATE	= 3001; // Create a ECDSA Key pair
-	public static final int REQUEST_ECDSA_SIGN	= 3002; // Create ECDSA Signature
-	public static final int REQUEST_ECDSA_VERIFY	= 3003; // Verify an ECDSA Signature
-	public static final int REQUEST_ECDSA_GETPUBPRV	= 3004; // Extract a public key out of a private key
-	public static final int REQUEST_ECDSA_GETPUBSIG	= 3005; // Extract a public key out of a message, signature and curve.
+	public static final int REQUEST_ADDKEY		= 2001; // DEPRECIATING: Can also be used to update a key
+	public static final int INSTRUCT_GETKEY		= 2002; // Get Key
+	public static final int INSTRUCT_DELETEKEY	= 2003; // Delete a Key
+	public static final int INSTRUCT_KEYENUM	= 2004; // Get Next Key Enumerating through them.
+	// Request Codes: Crypto
+	public static final int INSTRUCT_CREATEKEY	= 3001; // Create a ECDSA Key pair
+	public static final int INSTRUCT_SIGN		= 3002; // Create ECDSA Signature
+	public static final int INSTRUCT_VERIFY		= 3003; // Verify a signature
+	public static final int INSTRUCT_GETPUBPRV	= 3004; // Extract a public key out of a private key
+	public static final int INSTRUCT_GETPUBSIG	= 3005; // Extract a public key out of a message, signature and curve.
+	public static final int INSTRUCT_ENCRYPT	= 3006; // Encrypted Data using ECDH
+	public static final int INSTRUCT_DECRYPT	= 3007; // Decrypt Data using ECDH
 	// Request Codes: ECDH
 	public static final int REQUEST_ECDH_SHARED	= 4000; // Shared Key using ECDH
-	public static final int REQUEST_ECDH_ENCRYPT	= 4001; // Encrypted Data using ECDH
-	public static final int REQUEST_ECDH_DECRYPT	= 4002; // Decrypt Data using ECDH
 	// Request Codes: AES
-	public static final int REQUEST_AES_ENCRYPT	= 5001; // Encrypted Data using AES
-	public static final int REQUEST_AES_DECRYPT	= 5002; // Decrypt Data using AES
-	// Request Codes: RSA
-	public static final int REQUEST_RSA_CREATE	= 6001; // Create a ECDSA Key pair
-	public static final int REQUEST_RSA_SIGN	= 6002; // Create ECDSA Signature
-	public static final int REQUEST_RSA_VERIFY	= 6003; // Verify an ECDSA Signature
-	public static final int REQUEST_RSA_ENCRYPT	= 6004; // Encrypted Data using AES
-	public static final int REQUEST_RSA_DECRYPT	= 6005; // Decrypt Data using AES
+	public static final int REQUEST_AES_ENCRYPT	= 5001; // DEPRECIATING: Encrypted Data using AES
+	public static final int REQUEST_AES_DECRYPT	= 5002; // DEPRECIATING: Decrypt Data using AES
 	// Request Codes: HASH
 	public static final int REQUEST_HASH		= 7001; // Get a hash result
 	// Extra Strings
-	public static final String EXTRA_REQUEST	= "requestCode";
-	public static final String EXTRA_PROVIDER	= "ProviderID";
+	public static final String EXTRA_INSTRUCT	= "requestCode";
+	public static final String EXTRA_SPID		= "ProviderID";
 	public static final String EXTRA_CALLID		= "CallId";
 	public static final String EXTRA_KEYNAME	= "KeyName";
 	public static final String EXTRA_KEYRECORD	= "KeyObject";
-	public static final String EXTRA_ERROR		= "ErrorMessage";
+	public static final String EXTRA_RESULTCODE	= "ErrorMessage";
+	public static final String EXTRA_DEVICEPOINTER	= "DevicePointer";
 	public static final String EXTRA_PUB		= "PUB";
 	public static final String EXTRA_PRV		= "PRV";
 	public static final String EXTRA_TOPUB		= "TOPUB";
