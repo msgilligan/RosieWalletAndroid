@@ -217,7 +217,7 @@ public class MainActivity extends Activity  {
 ******	Required Field(s):
 ******
 ******		EXTRA_SPID (String / UUID 32) - Pass your assigned Service Provider ID.
-******		EXTRA_ECC_CURVE (String) - ECDSA Curve to use see Rivet.Java for ECC Curves
+******		EXTRA_KEYTYPE (String) - ECDSA Curve to use see Rivet.Java for ECC Curves
 ******
 ******	Optional Field(s):
 ******
@@ -245,7 +245,7 @@ public class MainActivity extends Activity  {
 			.putExtra(Rivet.EXTRA_SPID, SP_UUID)
 			.putExtra(Rivet.EXTRA_CALLID, vc)
 			.putExtra(Rivet.EXTRA_KEYNAME,"VC_"+vc)
-			.putExtra(Rivet.EXTRA_ECC_CURVE, Rivet.CURVE_SECP256K1);
+			.putExtra(Rivet.EXTRA_KEYTYPE, Rivet.KEYTYPE_ECDSA_SECP256K1);
 		if (intent.resolveActivity(getPackageManager()) != null) {
 			startActivityForResult(intent,Rivet.INSTRUCT_CREATEKEY);
 		}

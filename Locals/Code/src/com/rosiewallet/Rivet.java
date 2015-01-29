@@ -48,7 +48,8 @@ public class Rivet {
 	public static final String EXTRA_SIGNDONE	= "SignDone";
 	public static final String EXTRA_PUBLICDATA	= "PublicData";
 	public static final String EXTRA_SECUREDATA	= "SecureData";
-	public static final String EXTRA_ECC_CURVE	= "Curve";
+	public static final String EXTRA_ECC_CURVE = "Curve"; // DEPRECIATED
+	public static final String EXTRA_KEYTYPE	= "KeyType";
 	public static final String EXTRA_VC		= "vc";
 	public static final String EXTRA_VC_PUBADDR	= "PublicAddress";
 	public static final String EXTRA_PUBKEY		= "PublicKey";
@@ -59,22 +60,24 @@ public class Rivet {
 	public static final String EXTRA_SHAREDKEY	= "SharedKey";
 	public static final String EXTRA_KEY		= "Key";
 	public static final String EXTRA_HASH_ALGO	= "HashAlgo";
-	// ECC Curves
-	public static final String CURVE_SECP192R1	= "SECP192R1";	/*!< 192-bits NIST curve  */
-	public static final String CURVE_SECP224R1	= "SECP224R1";	/*!< 224-bits NIST curve  */
-	public static final String CURVE_SECP256R1	= "SECP256R1";	/*!< 256-bits NIST curve  */
-	public static final String CURVE_SECP384R1	= "SECP384R1";	/*!< 384-bits NIST curve  */
-	public static final String CURVE_SECP521R1	= "SECP521R1";	/*!< 521-bits NIST curve  */
-	public static final String CURVE_BP256R1	= "BP256R1";	/*!< 256-bits Brainpool curve */
-	public static final String CURVE_BP384R1	= "BP384R1";	/*!< 384-bits Brainpool curve */
-	public static final String CURVE_BP512R1	= "BP512R1";	/*!< 512-bits Brainpool curve */
-	public static final String CURVE_M221		= "M221";	/*!< (not implemented yet)    */
-	public static final String CURVE_M255		= "M255";	/*!< Curve25519               */
-	public static final String CURVE_M383		= "M383";	/*!< (not implemented yet)    */
-	public static final String CURVE_M511		= "M511";	/*!< (not implemented yet)    */
-	public static final String CURVE_SECP192K1	= "SECP192K1";	/*!< 192-bits "Koblitz" curve */
-	public static final String CURVE_SECP224K1	= "SECP224K1";	/*!< 224-bits "Koblitz" curve */
-	public static final String CURVE_SECP256K1	= "SECP256K1";	/*!< 256-bits "Koblitz" curve */
+	// KEYTYPE
+	public static final String KEYTYPE_ECDSA_DEFAULT 	= "ECDSA_SECP256K1";	/*!< 256-bits "Koblitz" curve (Bitcoin) */
+	public static final String KEYTYPE_ECDSA_SECP192R1	= "ECDSA_SECP192R1";	/*!< 192-bits NIST curve  */
+	public static final String KEYTYPE_ECDSA_SECP224R1	= "ECDSA_SECP224R1";	/*!< 224-bits NIST curve  */
+	public static final String KEYTYPE_ECDSA_SECP256R1	= "ECDSA_SECP256R1";	/*!< 256-bits NIST curve  */
+	public static final String KEYTYPE_ECDSA_SECP384R1	= "ECDSA_SECP384R1";	/*!< 384-bits NIST curve  */
+	public static final String KEYTYPE_ECDSA_SECP521R1	= "ECDSA_SECP521R1";	/*!< 521-bits NIST curve  */
+	public static final String KEYTYPE_ECDSA_BP256R1	= "ECDSA_BP256R1";	/*!< 256-bits Brainpool curve */
+	public static final String KEYTYPE_ECDSA_BP384R1	= "ECDSA_BP384R1";	/*!< 384-bits Brainpool curve */
+	public static final String KEYTYPE_ECDSA_BP512R1	= "ECDSA_BP512R1";	/*!< 512-bits Brainpool curve */
+	public static final String KEYTYPE_ECDSA_M221		= "ECDSA_M221";		/*!< (reserved / not implemented yet)    */
+	public static final String KEYTYPE_ECDSA_M255		= "ECDSA_M255";		/*!< Curve25519               */
+	public static final String KEYTYPE_ECDSA_M383		= "ECDSA_M383";		/*!< (reserved / not implemented yet)    */
+	public static final String KEYTYPE_ECDSA_M511		= "ECDSA_M511";		/*!< (reserved / not implemented yet)    */
+	public static final String KEYTYPE_ECDSA_SECP192K1	= "ECDSA_SECP192K1";	/*!< 192-bits "Koblitz" curve */
+	public static final String KEYTYPE_ECDSA_SECP224K1	= "ECDSA_SECP224K1";	/*!< 224-bits "Koblitz" curve */
+	public static final String KEYTYPE_ECDSA_SECP256K1	= "ECDSA_SECP256K1";	/*!< 256-bits "Koblitz" curve (Bitcoin) */
+	public static final String CURVE_SECP256K1 = "SECP256K1"; // DEPRECIATED
 	// ALGOs
 	public static final String ECC_ALGO_AES		= "AES";
 	// HASHs
