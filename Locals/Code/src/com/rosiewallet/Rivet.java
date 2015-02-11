@@ -36,7 +36,7 @@ public class Rivet {
 	public static final String EXTRA_CALLID		= "CallId";
 	public static final String EXTRA_KEYNAME	= "KeyName";
 	public static final String EXTRA_KEYRECORD	= "KeyObject";
-	public static final String EXTRA_RESULTCODE	= "ErrorMessage";
+	// DEPRECIATED use resultCode instead : public static final String EXTRA_RESULTCODE	= "ErrorMessage";
 	public static final String EXTRA_DEVICEPOINTER	= "DevicePointer";
 	public static final String EXTRA_PUB		= "PUB";
 	public static final String EXTRA_PRV		= "PRV";
@@ -86,7 +86,8 @@ public class Rivet {
 	public static final String HASH_SHA256		= "SHA256";
 	public static final String HASH_SHA256x2	= "SHA256x2";	
 	// ERROR CODES - Rivetz
-	public static final int ERROR_NONE		= 0x00000000; // no error - 4 byte error code
+	public static final int ERROR_NONE		= -0x00000001; // no error - 4 byte error code
+	public static final int ERROR_CANCELED		= 0x00000000; // user cancelled intent
 	public static final int ERROR_UNKNOWN		= 0x00000001; // uknown - generic error result
 	public static final int ERROR_INVALID_SPID	= 0x00000020; // Invalid Service Provider ID
 	public static final int ERROR_INVALID_JSON	= 0x00000022; // Invalid JSON passed
@@ -110,7 +111,7 @@ public class Rivet {
 	// Bitcoin 2.0 type coins not implemented yet / Reserved
 	public static final String KEYTYPE_VC_XRP		= "VC_XRP";		/* Ripple */
 	public static final String KEYTYPE_VC_XCP		= "VC_XCP";		/* Counterparty */
-	public static final String KEYTYPE_VC_MSC		= "VC_MSC";		/* Mastercoin (Omni) */
+	public static final String KEYTYPE_VC_MSC		= "VC_MSC";		/* Mastercoin (Omni Layer) */
 	public static final String KEYTYPE_VC_NXT		= "VC_NXT";		/* Nxt */
 	public static final String KEYTYPE_VC_NXTV		= "VC_NXTV";		/* NXTventure */
 	public static final String KEYTYPE_VC_NXTP		= "VC_NXTP";		/* NXTprivacy */

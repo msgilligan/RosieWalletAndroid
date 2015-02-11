@@ -69,7 +69,7 @@ public class MainActivity extends Activity  {
 		}
 	}
 	protected void resultGetPointer(int resultCode, Intent data) {
-		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		int RivetResultCode = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 		if (RivetResultCode != 0) {
 			ToastIt("GetPointer returned error: "+String.valueOf(RivetResultCode));
 			return;
@@ -165,7 +165,7 @@ public class MainActivity extends Activity  {
 	}
 	protected void resultSendCoinRivet(int resultCode, Intent data) {
 		String ErrorDesc = "Sign Transaction Error: ";
-		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		int RivetResultCode = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 		if (RivetResultCode != 0) {
 			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
 			return;
@@ -183,11 +183,19 @@ public class MainActivity extends Activity  {
 		String SignedTrans = data.getStringExtra(Rivet.EXTRA_SIGNED);
 		if (SignedTrans == null) {
 			ToastIt(ErrorDesc+"SignedTrans is null");
+			VCArray[VCIndex(vc)].spending = new ArrayList<String>();
+			return;
+		}
+		if (SignedTrans.equals("")) {
+			// ToastIt(ErrorDesc+"SignedTrans cancelled.");
+			ToastIt("Transaction cancelled.");
+			VCArray[VCIndex(vc)].spending = new ArrayList<String>();
 			return;
 		}
 		boolean SignedDone = data.getBooleanExtra(Rivet.EXTRA_SIGNDONE,false);
 		if (!SignedDone) {
 			ToastIt(ErrorDesc+"Multi-sig signing not supported in RosieWallet yet.");
+			VCArray[VCIndex(vc)].spending = new ArrayList<String>();
 			return;
 		}
 		ToastIt("Sending signed transaction");
@@ -252,7 +260,7 @@ public class MainActivity extends Activity  {
 	}
 	public void resultECDSACreate(int resultCode, Intent data) {
 		String ErrorDesc = "ECDSA Create Error: ";
-		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		int RivetResultCode = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 		if (RivetResultCode != 0) {
 			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
 			return;
@@ -400,7 +408,7 @@ public class MainActivity extends Activity  {
 	}
 	public void resultsignmessage(int resultCode, Intent data) {
 		String ErrorDesc = "ECDSA Sign Error: ";
-		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		int RivetResultCode = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 		if (RivetResultCode != 0) {
 			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
 			return;
@@ -525,7 +533,7 @@ public class MainActivity extends Activity  {
 	}
 	protected void resultECDHShared(int resultCode, Intent data) {
 		String ErrorDesc = "ECDH Shared Key Error: ";
-		int RivetResultCode = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+		int RivetResultCode = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 		if (RivetResultCode != 0) {
 			ToastIt(ErrorDesc+"RivetResultCode = "+String.valueOf(RivetResultCode));
 			return;
@@ -609,7 +617,7 @@ public class MainActivity extends Activity  {
 			String vc = CallId;
 			String ErrorDesc = "ECDSA Verify Error: ";
 			if (IsValidVC(vc)) {
-				int ERROR = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+				int ERROR = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 				if (ERROR == 0) {
 					boolean VERIFIED = data.getBooleanExtra(Rivet.EXTRA_VERIFIED,false); // Always default to false
 					if (VERIFIED)
@@ -690,7 +698,7 @@ public class MainActivity extends Activity  {
 			String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
 			String ErrorDesc = "Get Key: ";
 			if (vc != null && PUBLICDATA != null) {
-				int ERROR = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+				int ERROR = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 				if (ERROR == 0) {
 					if (!PUBLICDATA.equals("")) {
 						VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
@@ -720,7 +728,7 @@ public class MainActivity extends Activity  {
 			String vc = CallId;
 			String ErrorDesc = "ECDSA Get Pub From Prv Error: ";
 			if (IsValidVC(vc)) {
-				int ERROR = data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
+				int ERROR = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
 				if (ERROR == 0) {
 					String VCADDRESS = data.getStringExtra(Rivet.EXTRA_VC_PUBADDR);
 					if (VCADDRESS.equals("") == false) {
@@ -880,7 +888,9 @@ public class MainActivity extends Activity  {
 	}
 	public void LoadWebpage(String htmlfile) {
 		String html = LoadData("website/"+htmlfile);
-		webView.loadDataWithBaseURL("file:///android_asset/",html,"text/html", "UTF-8",null);
+		String basehref = "file:///android_asset/";
+		if (IsArndale()) basehref = "fake://not/needed";
+		webView.loadDataWithBaseURL(basehref,html,"text/html", "UTF-8",null);
 	}
 	private String convertStreamToString(java.io.InputStream is) {
 	    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
@@ -1283,5 +1293,9 @@ public class MainActivity extends Activity  {
 		public ArrayList<String> spending = new ArrayList<String>();
 		public long fee = 0;
 		public boolean Loaded = false;
+	}
+	private boolean IsArndale() {
+		if (android.os.Build.HARDWARE.equals("arndale")) return true;
+		return false;
 	}
 }
