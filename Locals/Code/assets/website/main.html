@@ -128,7 +128,7 @@
 		 	<fieldset data-role="controlgroup">
 				<legend>Use testnet blockchain:</legend>
 				<input type="checkbox" name="checkbox-usetestnet" id="checkbox-usetestnet" />
-				<label for="checkbox-usetestnet">Uset testnet</label>
+				<label for="checkbox-usetestnet">Use Testnet</label>
 		    </fieldset>
 		</div>
         	<div id="div-setup-fee" data-role="fieldcontain">
@@ -139,10 +139,14 @@ Transaction Fee: <input id="txt-fee" type="number" step="0.00000001" data-role="
 		
 		<div id="about-page" style="display: none;">
 		<div id="about-content" data-role="content">
-        	<h2>Rosie Wallet Test App</h2>
-        	<p>This application exercises the primary functions of the Rivetz Trusted Execution Applet. For documentation on
-        	how to integrate with these features see <a href="http://rivetz.com/sdk">http://rivetz.com/sdk</a>
-        	<p>Please note that Bitcoin related calls are intended for test purposes only and not to store true value.
+        	<h2>Rosie Wallet</h2>
+        	<p>This application demonstrates a Bitcoin wallet using Rivetz to protect
+        	the account key in the device hardware. For docs on
+        	how to integrate with these features see <a href="http://rivetz.com/docs">http://rivetz.com/docs</a>
+        	<p>Please note that Bitcoin is held in a private keys unique to this phone. Think of it as cash. Lose the
+        	phone, lose the money. See RivetAndroid for backup features. 
+        	<h2>Version</h2>
+        	<p><span id="appVersionNumber">loading...</span>
         	<h2>Contact</h2>
         	<p><a href="mailto:info@rivetz.com">info@rivetz.com</a>
         	</div><!-- /content -->

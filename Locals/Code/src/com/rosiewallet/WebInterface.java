@@ -8,6 +8,8 @@ import android.webkit.JavascriptInterface;
 import android.widget.ImageView;
 import android.widget.Toast;
 import android.content.ClipboardManager;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageInfo;
 
 public class WebInterface {
 	Context mContext;
@@ -115,5 +117,16 @@ public class WebInterface {
 	@JavascriptInterface
 	public void bitcoinNewAccount(String vc) {
 		((MainActivity)mContext).CreateWallet(vc);
+	}
+	@JavascriptInterface
+	public String getAppVersion() {
+		try {
+			PackageManager pm = mContext.getPackageManager();
+			String pn = mContext.getPackageName();
+			PackageInfo pi = pm.getPackageInfo(pn,0);
+			return pi.versionName;	
+		} catch(PackageManager.NameNotFoundException e) {
+			return "unknown";
+		}
 	}
 }

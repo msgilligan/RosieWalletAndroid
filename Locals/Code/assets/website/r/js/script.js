@@ -1,4 +1,6 @@
 $(document).ready(function() {
+	// set the version number in the about screen
+	$("#appVersionNumber").html(AndroidHost.getAppVersion());
 	$("#nav-home-page").click(function() {
 		try {
 			$("#send-page").hide();
