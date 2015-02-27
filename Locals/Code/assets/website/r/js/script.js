@@ -110,6 +110,11 @@ $(document).ready(function() {
 			
 		} catch(e) {}
 	});
+	$("#txt-send-btcamount").change(function() {
+		try {
+			DisplaySendBalance();
+		} catch(e) {}
+	});
 	$("#txt-fee").change(function() {
 		try {
 			//alert("text-fee changed");
@@ -431,6 +436,14 @@ $(document).ready(function() {
 		}
 		
 	}
+	function DisplaySendBalance() {
+		Balance = parseFloat(bitcoinbalanceStr);
+		Balance -= fee;
+		Balance -= parseFloat($("#txt-send-btcamount").val());
+		$("#send-message").html("<table><tr><td>Current Balance:</td><td>" + bitcoinbalanceStr + "</td></tr>" +
+					"<tr><td>Fee:</td><td>" + fee.toFixed(8) + "</td></tr>" +
+					"<tr><td>Remaining:</td><td>" + Balance.toFixed(8) +"</td></tr></table>");
+	}
 	function DisplayBalance() {
 		if (bitcoinbalanceStr!="") {
 			$("#bitcoin-balance").html('<center>Balance: '+bitcoinbalanceStr+' ' + filterTEST(vc) + '</center>');
@@ -441,10 +454,14 @@ $(document).ready(function() {
 			else {
 				$("#bitcoin-unconfirmbalance").html('');
 			}
+			$("#btn-send-send").prop( "disabled", false );
+			DisplaySendBalance();
 		}
 		else {
 			$("#bitcoin-balance").html('<center>Balance: undetermined</center>');
 			$("#bitcoin-unconfirmbalance").html('');
+			$("#btn-send-send").prop( "disabled", true );
+			$("#send-message").html("");
 		}
 	}
 	function DisplayWallet() {
@@ -464,7 +481,7 @@ $(document).ready(function() {
 							bitcoinaddress + '</font></center>');
 			//$("#receive-private").html('<center><font size=-1>' +
 			//				bitcoinprivate + '</font></center>');
-			$("#send-message").html('');
+			// $("#send-message").html('');
 			DisplayBalance();
 			$("#txt-message-publickey").val(bitcoinpublic);
 			
@@ -472,8 +489,8 @@ $(document).ready(function() {
 		else {
 			$("#bitcoin-address").html('<center>' + 
 					GetVCName(vc) + ' (' + filterTEST(vc) + ') Address: not loaded</center>');
-			$("#send-message").html('<center>' + 
-					GetVCName(vc) + ' (' + filterTEST(vc) + ') Address: not loaded</center>');
+			/*$("#send-message").html('<center>' + 
+					GetVCName(vc) + ' (' + filterTEST(vc) + ') Address: not loaded</center>');*/
 			$("#receive-address").html('<center>' + 
 					GetVCName(vc) + ' (' + filterTEST(vc) + ') Address: not loaded</center>');
 			$("#receive-private").html('');
