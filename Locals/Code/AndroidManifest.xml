@@ -33,6 +33,16 @@
 		<data android:scheme="bitcoin" />
 	        <category android:name="android.intent.category.DEFAULT" />
 	    </intent-filter>
+	    <intent-filter>
+	        <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+		<data android:scheme="litecoin" />
+	        <category android:name="android.intent.category.DEFAULT" />
+	    </intent-filter>
+	    <intent-filter>
+	        <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+		<data android:scheme="peercoin" />
+	        <category android:name="android.intent.category.DEFAULT" />
+	    </intent-filter>
         </activity>
 	<service
             android:name="com.rosiewallet.WebGet"
