@@ -144,6 +144,7 @@ $(document).ready(function() {
 			// bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
 			bitcoinbalanceStr = "";
 			bitcoinunbalanceStr = "";
+			bitcoinvalueStr = "";
 			displayAddress();
 			buildQRCode();
 			DisplayWallet();
@@ -162,6 +163,7 @@ $(document).ready(function() {
 			bitcoinpublic = "";
 			bitcoinbalanceStr = "";
 			bitcoinunbalanceStr = "";
+			bitcoinvalueStr = "";
 			$("#receive-qrcode-public").text('');
 			$("#receive-qrcode-private").text('');
 			displayAddress();
@@ -270,6 +272,7 @@ $(document).ready(function() {
 	// bitcoinprivate = AndroidHost.bitcoinPrivateKey(vc);
 	bitcoinbalanceStr = "";
 	bitcoinunbalanceStr = "";
+	bitcoinvalueStr = "";
 	sign_Sig = "";
 	displayAddress();
 	buildQRCode();
@@ -335,6 +338,7 @@ $(document).ready(function() {
 	function checkBalanceExe() {
 		bitcoinbalanceStr = AndroidHost.bitcoinGetBalance(vc);
 		bitcoinunbalanceStr = AndroidHost.bitcoinGetZeroBalance(vc);
+		bitcoinvalueStr = AndroidHost.GetBalanceValue(vc);
 		sign_Sig = AndroidHost.bitcoinGetSignature(vc);
 		$("#txt-message-signature").val(sign_Sig);
 		EncMsg = AndroidHost.bitcoinGetEncrypted(vc);
@@ -358,6 +362,7 @@ $(document).ready(function() {
 		id1 = setInterval(checkBalance, 1 * 1000);
 		bitcoinbalanceStr = "";
 		bitcoinunbalanceStr = "";
+		bitcoinvalueStr = "";
 		LoadFee();
 		displayAddress();
 		buildQRCode();
@@ -446,7 +451,10 @@ $(document).ready(function() {
 	}
 	function DisplayBalance() {
 		if (bitcoinbalanceStr!="") {
-			$("#bitcoin-balance").html('<center>Balance: '+bitcoinbalanceStr+' ' + filterTEST(vc) + '</center>');
+			html = '<center>Balance: '+bitcoinbalanceStr+' ' + filterTEST(vc);
+			if (bitcoinvalueStr!="") html += '<br>$'+bitcoinvalueStr+' USD</center>';
+			else html += '</center>';
+			$("#bitcoin-balance").html(html);
 			if (bitcoinunbalanceStr!="") {
 				$("#bitcoin-unconfirmbalance").html('<center>Unconfirmed Balance: '+
 									bitcoinunbalanceStr+' ' + filterTEST(vc) + '</center>');

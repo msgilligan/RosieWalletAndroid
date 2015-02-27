@@ -107,6 +107,10 @@ public class WebInterface {
 		return ((MainActivity)mContext).GetBalanceAddressNew(vc);
 	}
 	@JavascriptInterface
+	public String GetBalanceValue(String vc) {
+		return ((MainActivity)mContext).GetBalanceValue(vc);
+	}
+	@JavascriptInterface
 	public String bitcoinGetZeroBalance(String vc) {
 		return ((MainActivity)mContext).GetUnconfirmedBalanceAddressNew(vc);
 	}

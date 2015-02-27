@@ -316,6 +316,7 @@ public class MainActivity extends Activity  {
 		VCArray[VCIndex(vc)].GotBalanceList = false;
 		VCArray[VCIndex(vc)].Balance0Confirm = 0;
 		VCArray[VCIndex(vc)].Balance1Confirm = 0;
+		VCArray[VCIndex(vc)].Value = 0;
 		VCArray[VCIndex(vc)].fee = LoadFee(vc);
 		VCArray[VCIndex(vc)].Loaded = false;
 		GetPublicAddressFromKeyName(vc);
@@ -733,6 +734,7 @@ public class MainActivity extends Activity  {
 						VCArray[VCIndex(vc)].GotBalanceList = false;
 						VCArray[VCIndex(vc)].Balance0Confirm = 0;
 						VCArray[VCIndex(vc)].Balance1Confirm = 0;
+						VCArray[VCIndex(vc)].Value = 0;
 						VCArray[VCIndex(vc)].fee = LoadFee(vc);
 						// ToastIt("Got Public Key now getting address "+vc);
 						GetPublicAddressFromKeyName(vc);
@@ -866,6 +868,20 @@ public class MainActivity extends Activity  {
 				}
 				VCArray[VCIndex(vc)].spending = new ArrayList<String>();
 			}
+			else if (type.equals("value")) {
+				try {
+					String valStr = "";
+					JSONObject jObj1 = new JSONObject(result);
+					JSONArray jObj2 = jObj1.getJSONArray("data");
+					JSONObject jObj3 = (JSONObject)jObj2.get(0);
+					JSONObject jObj4 = jObj3.getJSONObject("rates");
+					String vcStr = vc;
+					if (vcStr.equals("TBTC")) vcStr = "BTC";
+					valStr = jObj4.getString(vcStr);
+					VCArray[VCIndex(vc)].Value = Double.parseDouble(valStr);
+				} catch(Exception e) {
+				}
+			}
 		}
 	}
 	public void MessageBox(String Message) {
@@ -921,6 +937,17 @@ public class MainActivity extends Activity  {
 		if (!IsValidVC(vc)) return;
 		if (!VCArray[VCIndex(vc)].Loaded) return;
 		GetUnspentStart(vc);
+		GetValueStart(vc);
+	}
+	public void GetValueStart(String vc) {
+		if (!IsValidVC(vc)) return;
+		if (!VCArray[VCIndex(vc)].Loaded) return;
+		String urlstr = "http://rosieswallet.com/api-coin-v1/price.php?coin="+ vc;
+		Intent intentd = new Intent(this, WebGet.class)
+			.putExtra(WebGet.CALLID, vc)
+			.putExtra(WebGet.TYPE, "value")
+			.putExtra(WebGet.URL, urlstr);
+		startService(intentd);
 	}
 	public void GetUnspentStart(String vc) {
 		if (!IsValidVC(vc)) return;
@@ -932,6 +959,18 @@ public class MainActivity extends Activity  {
 			.putExtra(WebGet.TYPE, "unspent")
 			.putExtra(WebGet.URL, urlstr);
 		startService(intentd);
+	}
+	public String GetBalanceValue(String vc) {
+		if (!IsValidVC(vc)) return "";
+		if (!VCArray[VCIndex(vc)].Loaded) return "";
+		if (VCArray[VCIndex(vc)].Value == 0) return "";
+		if (VCArray[VCIndex(vc)].GotBalance) {
+			double USD = VCArray[VCIndex(vc)].Balance1Confirm * ( 1 / VCArray[VCIndex(vc)].Value );
+			DecimalFormat df = new DecimalFormat("0.00");
+			String ReturnStr = df.format(USD);
+			return ReturnStr;
+		}
+		return "";
 	}
 	public String GetBalanceAddressNew(String vc) {
 		if (!IsValidVC(vc)) return "";
@@ -1087,6 +1126,7 @@ public class MainActivity extends Activity  {
 		VCArray[VCIndex(vc)].GotBalanceList = false;
 		VCArray[VCIndex(vc)].Balance0Confirm = 0;
 		VCArray[VCIndex(vc)].Balance1Confirm = 0;
+		VCArray[VCIndex(vc)].Value = 0;
 		VCArray[VCIndex(vc)].fee = LoadFee(vc);
 		LoadTrans(vc);
 		return true;
@@ -1315,6 +1355,7 @@ public class MainActivity extends Activity  {
 		public ArrayList<String> spending = new ArrayList<String>();
 		public long fee = 0;
 		public boolean Loaded = false;
+		public double Value = 0;
 	}
 	private boolean IsArndale() {
 		if (android.os.Build.HARDWARE.equals("arndale")) return true;
