@@ -277,7 +277,33 @@ $(document).ready(function() {
 	var id2 = setInterval(checkBalanceExe,  1 * 1000);
 	var id3 = setInterval(checkBalance,    60 * 1000);
 	var id4 = setInterval(ScanResult,       1 * 1000);
+	var id5 = setInterval(NFCResult,        1 * 1000);
+	var StartWith = AndroidHost.GetVCStartWith();
+	vc = StartWith;
+	if (vc == "TBTC") usetestnet = true;
+	else usetestnet = false;
+	if (vc != oldvc) { // selection changed
+		ChangeVC();
+	}
 	
+	function NFCResult() {
+		var NFCMessage = AndroidHost.GetNFCMessage();
+		if (NFCMessage != "") {
+			// alert("NFCMessage = "+NFCMessage);
+			parsed = parseBitcoinURL(NFCMessage);
+			if (parsed == null) alert("NFCMessage did not parse.\nMessage: "+NFCMessage);
+			else {
+				$("#home-page").hide();
+				$("#receive-page").hide();
+				$("#settings-page").hide();
+				$("#about-page").hide();
+				$("#send-page").show();
+				$("#txt-send-btcamount").val('0.0');
+				$("#txt-send-toaddress").val(parsed.address);
+				$("#txt-send-btcamount").val(parsed["amount"]);
+			}
+		}
+	}
 	function ScanResult() {
 		var scanres = AndroidHost.bitcoinScanResult();
 		if (scanres != "") {

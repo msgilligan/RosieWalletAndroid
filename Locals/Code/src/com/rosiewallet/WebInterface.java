@@ -129,4 +129,12 @@ public class WebInterface {
 			return "unknown";
 		}
 	}
+	@JavascriptInterface
+	public String GetVCStartWith() {
+		return ((MainActivity)mContext).GetVCStartWith();
+	}
+	@JavascriptInterface
+	public String GetNFCMessage() {
+		return ((MainActivity)mContext).GetNFCMessage();
+	}
 }

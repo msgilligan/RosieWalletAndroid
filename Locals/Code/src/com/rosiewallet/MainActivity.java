@@ -2,15 +2,22 @@ package com.rosiewallet;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentFilter.MalformedMimeTypeException;
 import android.content.res.Resources;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
+import android.nfc.tech.Ndef;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -22,10 +29,12 @@ import android.widget.Toast;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,9 +46,12 @@ public class MainActivity extends Activity  {
 	private MyWebRequestReceiver receiver;
 	String scanResult = "";
 	private VirtualCoin[] VCArray = new VirtualCoin[4];
-	private String CurrentVC = new String("TBTC");
 	private boolean MovingWallet = false;
 	private static final String SP_UUID = "ca8ebc88-86e0-4f14-91e3-ea66037b3ab3-e8cd2413-a12a-469c-b4af-f61257500662";
+	public static final String MIME_TEXT_PLAIN = "text/plain";
+	private NfcAdapter mNfcAdapter;
+	private String VCStartWith;
+	private String NFCMessage;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +69,15 @@ public class MainActivity extends Activity  {
 		MoveOldKeys();
 		if (!MovingWallet) LoadWallets();
 		if (savedInstanceState == null) {
+			VCStartWith = new String("TBTC");
 			LoadWebpage("main.html");
+		}
+		mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+		if (mNfcAdapter != null) {
+			if (!mNfcAdapter.isEnabled()) {
+				Toast.makeText(this, "NFC is disabled.", Toast.LENGTH_LONG).show();
+			}
+			handleIntent(getIntent());
 		}
 	}
 	public void doGetPointer(String mySPID, String keyName) {
@@ -734,7 +754,7 @@ public class MainActivity extends Activity  {
 					if (VCADDRESS.equals("") == false) {
 						VCArray[VCIndex(vc)].PublicAddress = VCADDRESS;
 						VCArray[VCIndex(vc)].Loaded = true;
-						LoadWebpage("main.html");
+						if (VCStartWith.equals(vc)) LoadWebpage("main.html");
 					}
 					else ToastIt(ErrorDesc+"Public Key Data blank");
 				}
@@ -783,6 +803,7 @@ public class MainActivity extends Activity  {
 			String confirms = intent.getStringExtra(WebGet.CONFIRMS);
 			String vc = intent.getStringExtra(WebGet.CALLID);
 			String type = intent.getStringExtra(WebGet.TYPE);
+			// ToastIt("Received: "+result);
 			if (new String("unspent").equals(type)) {
 				VCArray[VCIndex(vc)].UnspentList = result;
 				try {
@@ -1177,7 +1198,8 @@ public class MainActivity extends Activity  {
 	}
 	public String ScanResult() {
 		String Retval = "";
-		if (new String("").equals(scanResult) == false) {
+		if (scanResult == null) return "";
+		if (scanResult.equals("") == false) {
 			Retval = scanResult;
 			scanResult = "";
 		}
@@ -1297,5 +1319,125 @@ public class MainActivity extends Activity  {
 	private boolean IsArndale() {
 		if (android.os.Build.HARDWARE.equals("arndale")) return true;
 		return false;
+	}
+	@Override
+	protected void onResume() {
+		super.onResume();
+		/**
+		* It's important, that the activity is in the foreground (resumed). Otherwise
+		* an IllegalStateException is thrown.
+		*/
+		setupForegroundDispatch(this, mNfcAdapter);
+	}
+     
+	@Override
+	protected void onPause() {
+		/**
+		* Call this before onPause, otherwise an IllegalArgumentException is thrown as well.
+		*/
+		stopForegroundDispatch(this, mNfcAdapter);
+		super.onPause();
+	}
+     
+	@Override
+	protected void onNewIntent(Intent intent) {
+		/**
+		* This method gets called, when a new Intent gets associated with the current activity instance.
+		* Instead of creating a new activity, onNewIntent will be called. For more information have a look
+		* at the documentation.
+		*
+		* In our case this method gets called, when the user attaches a Tag to the device.
+		*/
+		if (mNfcAdapter != null) handleIntent(intent);
+	}
+     
+	/**
+	* @param activity The corresponding {@link Activity} requesting the foreground dispatch.
+	* @param adapter The {@link NfcAdapter} used for the foreground dispatch.
+	*/
+	public static void setupForegroundDispatch(final Activity activity, NfcAdapter adapter) {
+		final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
+		intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+		final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
+
+		IntentFilter[] filters = new IntentFilter[1];
+		String[][] techList = new String[][]{};
+
+		// Notice that this is the same filter as in our manifest.
+		filters[0] = new IntentFilter();
+		filters[0].addAction(NfcAdapter.ACTION_NDEF_DISCOVERED);
+		filters[0].addCategory(Intent.CATEGORY_DEFAULT);
+		try {
+			filters[0].addDataType(MIME_TEXT_PLAIN);
+		} catch (MalformedMimeTypeException e) {
+			throw new RuntimeException("Check your mime type.");
+		}
+		adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
+	}
+	
+	/**
+	* @param activity The corresponding {@link BaseActivity} requesting to stop the foreground dispatch.
+	* @param adapter The {@link NfcAdapter} used for the foreground dispatch.
+	*/
+	public static void stopForegroundDispatch(final Activity activity, NfcAdapter adapter) {
+		adapter.disableForegroundDispatch(activity);
+	}
+	private void handleIntent(Intent intent) {
+		String action = intent.getAction();
+		if (mNfcAdapter == null) return;
+		if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+			Tag tagFromIntent = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+			Ndef ndefTag = Ndef.get(tagFromIntent);
+			NdefMessage ndefMesg = ndefTag.getCachedNdefMessage();
+			byte[] payload = ndefMesg.toByteArray();
+			Log.d(TAG, "NFCMessage: " + ndefMesg.toString());
+			int headerLength = 5;
+			String message = null;
+			try {
+				message = new String(payload, headerLength , payload.length - headerLength - 1, "UTF-8");
+			}
+			catch (UnsupportedEncodingException e) {}
+			// ToastIt("Received Message: " + message);
+			Log.d(TAG, "MESSAGE: " + message);
+			// D/RivetzNFC( 2946): Message: 
+			// NdefMessage [NdefRecord tnf=1 type=55 		
+			// payload=
+			// 00626974636F696E3A6D67356E5876554D4436657279636356586F37534B4439594A68384A
+			// 6242683775553F616D6F756E743D302E30303432333326723D68747470733A2F2F74657374
+			// 2E6269747061792E636F6D2F692F45694B704D4B32643256764B4A696341626D664B6534
+			// ]
+			// bitcoin:mpX6L3ZS8wEH6pYVeZ29nyVXxmBx8RGY2A?amount=0.004225&r=https://test.bitpay.com/i/YVNc43MbtCUSd9pAxx3HU
+			if (message.startsWith("bitcoin:m") || message.startsWith("bitcoin:n")) {
+				VCStartWith = new String("TBTC");
+				NFCMessage = message;
+				LoadWebpage("main.html");
+			}
+			else if (message.startsWith("bitcoin:")) {
+				VCStartWith = new String("BTC");
+				NFCMessage = message;
+				LoadWebpage("main.html");
+			}
+			else if (message.startsWith("litecoin:")) {
+				VCStartWith = new String("LTC");
+				NFCMessage = message;
+				LoadWebpage("main.html");
+			}
+			else if (message.startsWith("peercoin:")) {
+				VCStartWith = new String("PPC");
+				NFCMessage = message;
+				LoadWebpage("main.html");
+			}
+		}
+	}
+	public String GetVCStartWith() {
+		if (!IsValidVC(VCStartWith)) return "TBTC";
+		return VCStartWith;
+	}
+	public String GetNFCMessage() {
+		if (NFCMessage == null) return "";
+		String retVal = NFCMessage;
+		NFCMessage = "";
+		return retVal;
 	}
 }
