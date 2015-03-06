@@ -9,9 +9,8 @@ public class Rivet {
 	public static final int INSTRUCT_EXECUTE	= 0003; // Execute a server signed instruction
 	// Request Codes: Virtual Coin specific functionality
 	public static final int INSTRUCT_SIGNTXN	= 1001; // Sign a bitcoin transaction
-	public static final int REQUEST_VC_GETPUBPRV	= 1999; // DEPRECIATING: Get Public key from Private no service provider
 	// Request Codes: Service Provider key functionality for storing keys in RivetAndroid
-	public static final int REQUEST_ADDKEY		= 2001; // DEPRECIATING: Can also be used to update a key
+	public static final int INSTRUCT_ADDKEY		= 2001; // Add Key (not secure since key is loaded from Normal World)
 	public static final int INSTRUCT_GETKEY		= 2002; // Get Key
 	public static final int INSTRUCT_DELETEKEY	= 2003; // Delete a Key
 	public static final int INSTRUCT_KEYENUM	= 2004; // Get Next Key Enumerating through them.
@@ -36,7 +35,6 @@ public class Rivet {
 	public static final String EXTRA_CALLID		= "CallId";
 	public static final String EXTRA_KEYNAME	= "KeyName";
 	public static final String EXTRA_KEYRECORD	= "KeyObject";
-	// DEPRECIATED use resultCode instead : public static final String EXTRA_RESULTCODE	= "ErrorMessage";
 	public static final String EXTRA_DEVICEPOINTER	= "DevicePointer";
 	public static final String EXTRA_PUB		= "PUB";
 	public static final String EXTRA_PRV		= "PRV";
@@ -48,13 +46,14 @@ public class Rivet {
 	public static final String EXTRA_SIGNDONE	= "SignDone";
 	public static final String EXTRA_PUBLICDATA	= "PublicData";
 	public static final String EXTRA_SECUREDATA	= "SecureData";
-	public static final String EXTRA_ECC_CURVE = "Curve"; // DEPRECIATED
 	public static final String EXTRA_KEYTYPE	= "KeyType";
 	public static final String EXTRA_VC		= "vc";
 	public static final String EXTRA_VC_PUBADDR	= "PublicAddress";
 	public static final String EXTRA_PUBKEY		= "PublicKey";
 	public static final String EXTRA_PRVKEY		= "PrivateKey";
-	public static final String EXTRA_MESSAGE	= "Message";
+	public static final String EXTRA_MESSAGE	= "Message";    // Ascii String
+	public static final String EXTRA_HEXSTRING	= "MessageHex"; // HexString
+	public static final String EXTRA_BLOB		= "MessageBIN"; // byte array
 	public static final String EXTRA_SIGNATURE	= "Signature";
 	public static final String EXTRA_VERIFIED	= "Verified";
 	public static final String EXTRA_SHAREDKEY	= "SharedKey";
@@ -78,21 +77,21 @@ public class Rivet {
 	public static final String KEYTYPE_ECDSA_SECP192K1	= "ECDSA_SECP192K1";	/*!< 192-bits "Koblitz" curve */
 	public static final String KEYTYPE_ECDSA_SECP224K1	= "ECDSA_SECP224K1";	/*!< 224-bits "Koblitz" curve */
 	public static final String KEYTYPE_ECDSA_SECP256K1	= "ECDSA_SECP256K1";	/*!< 256-bits "Koblitz" curve (Bitcoin) */
-	// Remove
-	public static final String CURVE_SECP256K1 = "SECP256K1"; // DEPRECIATED
 	// ALGOs
 	public static final String ECC_ALGO_AES		= "AES";
 	// HASHs
 	public static final String HASH_SHA256		= "SHA256";
 	public static final String HASH_SHA256x2	= "SHA256x2";	
 	// ERROR CODES - Rivetz
-	public static final int ERROR_NONE		= -0x00000001; // no error - 4 byte error code
-	public static final int ERROR_CANCELED		= 0x00000000; // user cancelled intent
+	public static final int ERROR_NONE		= -0x00000001; // no error - 4 byte error code or use RESULT_OK
+	public static final int ERROR_CANCELED		= 0x00000000; // user cancelled intent or use RESULT_CANCELED
 	public static final int ERROR_UNKNOWN		= 0x00000001; // uknown - generic error result
 	public static final int ERROR_INVALID_SPID	= 0x00000020; // Invalid Service Provider ID
 	public static final int ERROR_INVALID_JSON	= 0x00000022; // Invalid JSON passed
 	public static final int ERROR_INVALID_VC	= 0x00000024; // Invalid VC Virtual Coin pased
 	public static final int ERROR_INVALID_KEYTYPE	= 0x00000026; // Invalid KEYTYPE passed
+	public static final int ERROR_INVALID_KEYNAME	= 0x00000028; // Invalid KEYNAME passed
+	public static final int ERROR_KEYNAME_EXISTS	= 0x0000002A; // KEYNAME already exists when adding or creating a key
 	
 	// Misc crypto currencies support and not supported
 	public static final String KEYTYPE_VC_TBTC		= "VC_TBTC";		/* Bitcoin testnet */
@@ -254,4 +253,10 @@ public class Rivet {
 	public static final String KEYTYPE_VC_NOO		= "VC_NOO";		/* NooCoin */
 	public static final String KEYTYPE_VC_EFL		= "VC_EFL";		/* Electronic Guilden */
 	// public static final String KEYTYPE_VC_TEST		= "VC_TEST";		/* TEST */	
+
+	public static String FormatError(int ERROR) {
+		return (ERROR < 0 ? "-" : "")+
+			"0x"+
+			("00000000" + Integer.toHexString(ERROR)).substring(Integer.toHexString(ERROR).length());
+	}
 }
