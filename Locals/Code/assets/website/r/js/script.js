@@ -145,6 +145,7 @@ $(document).ready(function() {
 			bitcoinbalanceStr = "";
 			bitcoinunbalanceStr = "";
 			bitcoinvalueStr = "";
+			bitcoinvalueStr2 = "";
 			displayAddress();
 			buildQRCode();
 			DisplayWallet();
@@ -164,6 +165,7 @@ $(document).ready(function() {
 			bitcoinbalanceStr = "";
 			bitcoinunbalanceStr = "";
 			bitcoinvalueStr = "";
+			bitcoinvalueStr2 = "";
 			$("#receive-qrcode-public").text('');
 			$("#receive-qrcode-private").text('');
 			displayAddress();
@@ -273,6 +275,7 @@ $(document).ready(function() {
 	bitcoinbalanceStr = "";
 	bitcoinunbalanceStr = "";
 	bitcoinvalueStr = "";
+	bitcoinvalueStr2 = "";
 	sign_Sig = "";
 	displayAddress();
 	buildQRCode();
@@ -339,6 +342,7 @@ $(document).ready(function() {
 		bitcoinbalanceStr = AndroidHost.bitcoinGetBalance(vc);
 		bitcoinunbalanceStr = AndroidHost.bitcoinGetZeroBalance(vc);
 		bitcoinvalueStr = AndroidHost.GetBalanceValue(vc);
+		bitcoinvalueStr2 = AndroidHost.GetValueCoin(vc);
 		sign_Sig = AndroidHost.bitcoinGetSignature(vc);
 		$("#txt-message-signature").val(sign_Sig);
 		EncMsg = AndroidHost.bitcoinGetEncrypted(vc);
@@ -363,6 +367,7 @@ $(document).ready(function() {
 		bitcoinbalanceStr = "";
 		bitcoinunbalanceStr = "";
 		bitcoinvalueStr = "";
+		bitcoinvalueStr2 = "";
 		LoadFee();
 		displayAddress();
 		buildQRCode();
@@ -442,12 +447,25 @@ $(document).ready(function() {
 		
 	}
 	function DisplaySendBalance() {
-		Balance = parseFloat(bitcoinbalanceStr);
+		thebalance = parseFloat(bitcoinbalanceStr);
+		tospend = parseFloat($("#txt-send-btcamount").val());
+		Balance = thebalance;
 		Balance -= fee;
-		Balance -= parseFloat($("#txt-send-btcamount").val());
-		$("#send-message").html("<table><tr><td>Current Balance:</td><td>" + bitcoinbalanceStr + "</td></tr>" +
-					"<tr><td>Fee:</td><td>" + fee.toFixed(8) + "</td></tr>" +
-					"<tr><td>Remaining:</td><td>" + Balance.toFixed(8) +"</td></tr></table>");
+		Balance -= tospend;
+		factor = val_bal = val_fee = val_done = 0.00;
+		if (bitcoinvalueStr2 != "") {
+			factor = parseFloat(bitcoinvalueStr2);
+			val_bal = thebalance * ( 1 / factor );
+			val_spend = tospend * ( 1 / factor );
+			val_fee = fee * ( 1 / factor );
+			val_done = Balance * ( 1 / factor );
+		}
+		$("#send-message").html(
+			"<table width=100%>"+
+			"<tr><td>Current Balance:</td><td>" + bitcoinbalanceStr + "</td><td>$" + val_bal.toFixed(4) + "</td></tr>" +
+			"<tr><td>To Spend:</td><td>" + tospend.toFixed(8) + "</td><td>$" + val_spend.toFixed(4) + "</td></tr>" +
+			"<tr><td>Fee:</td><td>" + fee.toFixed(8) + "</td><td>$" + val_fee.toFixed(4) + "</td></tr>" +
+			"<tr><td>Remaining:</td><td>" + Balance.toFixed(8) +"</td><td>$" + val_done.toFixed(4) + "</td></tr></table>");
 	}
 	function DisplayBalance() {
 		if (bitcoinbalanceStr!="") {

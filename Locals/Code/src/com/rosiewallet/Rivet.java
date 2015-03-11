@@ -3,65 +3,87 @@ package com.rosiewallet;
 public class Rivet {
 	// Intent
 	public static final String RIVET_INTENT		= "com.rivetz.adaptor.RIVETZ_ANDROID";
-	// Request Codes: Main
-	public static final int INSTRUCT_GETPOINTER	= 0001; // Get Pointer
+	//
+	// Rivet.java Version
+	//
+	// The version number x.y.z is split into three parts.
+	// Major, Minor, Patchlevel
+	//
+	public static final int RIVETJAVA_VERSION_MAJOR = 0;
+	public static final int RIVETJAVA_VERSION_MINOR = 0;
+	public static final int RIVETJAVA_VERSION_PATCH = 1;
+	//
+	// The single version number has the following structure:
+	//    MMNNPP00
+	//    Major version | Minor version | Patch version
+	//
+	public static final int    RIVETJAVA_VERSION_NUMBER     = 0x00000100;
+	public static final String RIVETJAVA_VERSION		= "0.0.1";
+	public static final String RIVETJAVA_VERSION_FULL	= "Rivet.java v0.0.1";
+	//
+	// Instructions
+	//
+	// Request Codes: Registration
+	//
+	public static final int INSTRUCT_GETPOINTER	  = 0001; // Get Pointer
 	public static final int INSTRUCT_REGISTERPROVIDER = 0002; // Service provider pairs with device
-	public static final int INSTRUCT_EXECUTE	= 0003; // Execute a server signed instruction
-	// Request Codes: Virtual Coin specific functionality
-	public static final int INSTRUCT_SIGNTXN	= 1001; // Sign a bitcoin transaction
+	public static final int INSTRUCT_EXECUTE	  = 0003; // Execute a server signed instruction
 	// Request Codes: Service Provider key functionality for storing keys in RivetAndroid
-	public static final int INSTRUCT_ADDKEY		= 2001; // Add Key (not secure since key is loaded from Normal World)
-	public static final int INSTRUCT_GETKEY		= 2002; // Get Key
-	public static final int INSTRUCT_DELETEKEY	= 2003; // Delete a Key
-	public static final int INSTRUCT_KEYENUM	= 2004; // Get Next Key Enumerating through them.
+	public static final int INSTRUCT_ADDKEY		= 1001; // Add Key (not secure since key is loaded from Normal World)
+	public static final int INSTRUCT_GETKEY		= 1002; // Get Key
+	public static final int INSTRUCT_DELETEKEY	= 1003; // Delete a Key
+	public static final int INSTRUCT_KEYENUM	= 1004; // Get Next Key Enumerating through them.
 	// Request Codes: Crypto
-	public static final int INSTRUCT_CREATEKEY	= 3001; // Create a ECDSA Key pair
-	public static final int INSTRUCT_SIGN		= 3002; // Create ECDSA Signature
-	public static final int INSTRUCT_VERIFY		= 3003; // Verify a signature
-	public static final int INSTRUCT_GETPUBPRV	= 3004; // Extract a public key out of a private key
-	public static final int INSTRUCT_GETPUBSIG	= 3005; // Extract a public key out of a message, signature and curve.
-	public static final int INSTRUCT_ENCRYPT	= 3006; // Encrypted Data using ECDH
-	public static final int INSTRUCT_DECRYPT	= 3007; // Decrypt Data using ECDH
+	public static final int INSTRUCT_CREATEKEY	= 2001; // Create a ECDSA Key pair to keyname
+	public static final int INSTRUCT_SIGN		= 2002; // Create ECDSA Signature from keyname
+	public static final int INSTRUCT_VERIFY		= 2003; // Verify a signature from keyname
+	public static final int INSTRUCT_ENCRYPT	= 2004; // Encrypted Data using ECDH
+	public static final int INSTRUCT_DECRYPT	= 2005; // Decrypt Data using ECDH
+	// Request Codes: Coin Specific Crypto
+	// DEPRECIATED: public static final int INSTRUCT_GETPUBPRV = 3004; // Extract a public address out of a keyname
+	public static final int INSTRUCT_GETADDRESS	= 3001; // Extract a coin public address out of keyname
+	public static final int INSTRUCT_SIGNTXN	= 3002; // Sign a bitcoin transaction
+	public static final int INSTRUCT_GETPUBSIG	= 3003; // Extract public key out of message & signature (SECP256K1 curve only)
 	// Request Codes: ECDH
-	public static final int REQUEST_ECDH_SHARED	= 4000; // Shared Key using ECDH
-	// Request Codes: AES
-	public static final int REQUEST_AES_ENCRYPT	= 5001; // DEPRECIATING: Encrypted Data using AES
-	public static final int REQUEST_AES_DECRYPT	= 5002; // DEPRECIATING: Decrypt Data using AES
+	public static final int INSTRUCT_ECDH_SHARED	= 4001; // Shared Key between similiar curve ECDH keys
 	// Request Codes: HASH
-	public static final int REQUEST_HASH		= 7001; // Get a hash result
+	public static final int INSTRUCT_HASH		= 5001; // Get a hash result
+	// Request Codes: AES
+	public static final int INSTRUCT_AES_ENCRYPT	= 6001; // Encrypted Data using AES (not secure exposed key)
+	public static final int INSTRUCT_AES_DECRYPT	= 6002; // Decrypt Data using AES (not secure exposed key)
 	// Extra Strings
-	public static final String EXTRA_INSTRUCT	= "requestCode";
-	public static final String EXTRA_SPID		= "ProviderID";
-	public static final String EXTRA_CALLID		= "CallId";
-	public static final String EXTRA_KEYNAME	= "KeyName";
-	public static final String EXTRA_KEYRECORD	= "KeyObject";
-	public static final String EXTRA_DEVICEPOINTER	= "DevicePointer";
-	public static final String EXTRA_PUB		= "PUB";
-	public static final String EXTRA_PRV		= "PRV";
-	public static final String EXTRA_TOPUB		= "TOPUB";
-	public static final String EXTRA_AMT		= "AMT";
-	public static final String EXTRA_FEE		= "FEE";
-	public static final String EXTRA_TRANS		= "TRANS";
-	public static final String EXTRA_SIGNED		= "SignedTrans";
-	public static final String EXTRA_SIGNDONE	= "SignDone";
-	public static final String EXTRA_PUBLICDATA	= "PublicData";
-	public static final String EXTRA_SECUREDATA	= "SecureData";
-	public static final String EXTRA_KEYTYPE	= "KeyType";
-	public static final String EXTRA_VC		= "vc";
-	public static final String EXTRA_VC_PUBADDR	= "PublicAddress";
-	public static final String EXTRA_PUBKEY		= "PublicKey";
-	public static final String EXTRA_PRVKEY		= "PrivateKey";
-	public static final String EXTRA_MESSAGE	= "Message";    // Ascii String
-	public static final String EXTRA_HEXSTRING	= "MessageHex"; // HexString
-	public static final String EXTRA_BLOB		= "MessageBIN"; // byte array
-	public static final String EXTRA_SIGNATURE	= "Signature";
-	public static final String EXTRA_VERIFIED	= "Verified";
-	public static final String EXTRA_SHAREDKEY	= "SharedKey";
-	public static final String EXTRA_KEY		= "Key";
-	public static final String EXTRA_HASH_ALGO	= "HashAlgo";
+	public static final String EXTRA_INSTRUCT	= "EXTRA_INSTRUCT";
+	public static final String EXTRA_SPID		= "EXTRA_SPID";
+	public static final String EXTRA_CALLID		= "EXTRA_CALLID";
+	public static final String EXTRA_KEYNAME	= "EXTRA_KEYNAME";
+	public static final String EXTRA_KEYRECORD	= "EXTRA_KEYRECORD";
+	public static final String EXTRA_DEVICEPOINTER	= "EXTRA_DEVICEPOINTER";
+	public static final String EXTRA_PUB		= "EXTRA_PUB";
+	public static final String EXTRA_PRV		= "EXTRA_PRV";
+	public static final String EXTRA_TOPUB		= "EXTRA_TOPUB";
+	public static final String EXTRA_AMT		= "EXTRA_AMT";
+	public static final String EXTRA_FEE		= "EXTRA_FEE";
+	public static final String EXTRA_TRANS		= "EXTRA_TRANS";
+	public static final String EXTRA_SIGNED		= "EXTRA_SIGNED";
+	public static final String EXTRA_SIGNDONE	= "EXTRA_SIGNDONE";
+	public static final String EXTRA_PUBLICDATA	= "EXTRA_PUBLICDATA";
+	public static final String EXTRA_SECUREDATA	= "EXTRA_SECUREDATA";
+	public static final String EXTRA_KEYTYPE	= "EXTRA_KEYTYPE";
+	public static final String EXTRA_COIN		= "EXTRA_COIN";
+	public static final String EXTRA_COIN_ADDRESS	= "EXTRA_COIN_ADDRESS";
+	public static final String EXTRA_PUBKEY		= "EXTRA_PUBKEY";
+	public static final String EXTRA_PRVKEY		= "EXTRA_PRVKEY";
+	public static final String EXTRA_MESSAGE	= "EXTRA_MESSAGE";   // Ascii String
+	public static final String EXTRA_HEXSTRING	= "EXTRA_HEXSTRING"; // Hex String
+	public static final String EXTRA_BLOB		= "EXTRA_BLOB";      // byte array
+	public static final String EXTRA_SIGNATURE	= "EXTRA_SIGNATURE";
+	public static final String EXTRA_VERIFIED	= "EXTRA_VERIFIED";
+	public static final String EXTRA_SHAREDKEY	= "EXTRA_SHAREDKEY";
+	public static final String EXTRA_KEY		= "EXTRA_KEY";
+	public static final String EXTRA_HASH_ALGO	= "EXTRA_HASH_ALGO";
 	// KEYTYPE
-	public static final String KEYTYPE_VC_BTC		= "VC_BTC";		/* Bitcoin (see also Misc crypto currencies below for more currencies) */
-	public static final String KEYTYPE_ECDSA_DEFAULT 	= "VC_BTC";		/*!< bitcoin / 256-bits "Koblitz" curve */
+	public static final String KEYTYPE_COIN_BTC		= "COIN_BTC";		/* Bitcoin (alt coins beloow) */
+	public static final String KEYTYPE_ECDSA_DEFAULT 	= "COIN_BTC";		/*!< bitcoin / 256-bits "Koblitz" curve */
 	public static final String KEYTYPE_ECDSA_SECP192R1	= "ECDSA_SECP192R1";	/*!< 192-bits NIST curve  */
 	public static final String KEYTYPE_ECDSA_SECP224R1	= "ECDSA_SECP224R1";	/*!< 224-bits NIST curve  */
 	public static final String KEYTYPE_ECDSA_SECP256R1	= "ECDSA_SECP256R1";	/*!< 256-bits NIST curve  */
@@ -80,180 +102,190 @@ public class Rivet {
 	// ALGOs
 	public static final String ECC_ALGO_AES		= "AES";
 	// HASHs
-	public static final String HASH_SHA256		= "SHA256";
-	public static final String HASH_SHA256x2	= "SHA256x2";	
+	public static final String HASH_MD2		= "HASH_MD2";
+	public static final String HASH_MD5		= "HASH_MD5";
+	public static final String HASH_SHA1		= "HASH_SHA1";
+	public static final String HASH_SHA256		= "HASH_SHA256";
+	public static final String HASH_DOUBLESHA256	= "HASH_DOUBLESHA256";
+	public static final String HASH_RIPEMD160	= "HASH_RIPEMD160";
+	//
+	//
 	// ERROR CODES - Rivetz
+	//
+	//
 	public static final int ERROR_NONE		= -0x00000001; // no error - 4 byte error code or use RESULT_OK
-	public static final int ERROR_CANCELED		= 0x00000000; // user cancelled intent or use RESULT_CANCELED
-	public static final int ERROR_UNKNOWN		= 0x00000001; // uknown - generic error result
-	public static final int ERROR_INVALID_SPID	= 0x00000020; // Invalid Service Provider ID
-	public static final int ERROR_INVALID_JSON	= 0x00000022; // Invalid JSON passed
-	public static final int ERROR_INVALID_VC	= 0x00000024; // Invalid VC Virtual Coin pased
-	public static final int ERROR_INVALID_KEYTYPE	= 0x00000026; // Invalid KEYTYPE passed
-	public static final int ERROR_INVALID_KEYNAME	= 0x00000028; // Invalid KEYNAME passed
-	public static final int ERROR_KEYNAME_EXISTS	= 0x0000002A; // KEYNAME already exists when adding or creating a key
-	
-	// Misc crypto currencies support and not supported
-	public static final String KEYTYPE_VC_TBTC		= "VC_TBTC";		/* Bitcoin testnet */
-	public static final String KEYTYPE_VC_LTC		= "VC_LTC";		/* Litecoin */
-	public static final String KEYTYPE_VC_PPC		= "VC_PPC";		/* Peercoin */
-	// Easy Coins to implement not implemented yet / Reserved
-	public static final String KEYTYPE_VC_FRC		= "VC_FRC";		/* Freicoin */
-	public static final String KEYTYPE_VC_DOGE		= "VC_DOGE";		/* Dogecoin */
-	public static final String KEYTYPE_VC_NMC		= "VC_NMC";		/* Namecoin */
-	public static final String KEYTYPE_VC_IXC		= "VC_IXC";		/* Ixcoin */
-	public static final String KEYTYPE_VC_UNO		= "VC_UNO";		/* Unobtanium */
-	public static final String KEYTYPE_VC_NVC		= "VC_NVC";		/* Novacoin */
-	public static final String KEYTYPE_VC_MZC		= "VC_MZC";		/* MazaCoin */
-	public static final String KEYTYPE_VC_ANC		= "VC_ANC";		/* Anoncoin */
-	public static final String KEYTYPE_VC_MAX		= "VC_MAX";		/* MaxCoin */
+	public static final int ERROR_CANCELED		=  0x00000000; // user cancelled intent or use RESULT_CANCELED
+	public static final int ERROR_UNKNOWN		=  0x00000001; // uknown - generic error result
+	public static final int ERROR_INVALID_SPID	=  0x00000020; // Invalid Service Provider ID
+	public static final int ERROR_INVALID_JSON	=  0x00000022; // Invalid JSON passed
+	public static final int ERROR_INVALID_COIN	=  0x00000024; // Invalid Coin pased
+	public static final int ERROR_INVALID_KEYTYPE	=  0x00000026; // Invalid KEYTYPE passed
+	public static final int ERROR_INVALID_KEYNAME	=  0x00000028; // Invalid KEYNAME passed
+	public static final int ERROR_KEYNAME_EXISTS	=  0x0000002A; // KEYNAME already exists when adding or creating a key
+	//
+	//
+	// Alt Coins crypto currencies
+	//
+	// Alt Coins Supported:
+	public static final String KEYTYPE_COIN_TBTC		= "COIN_TBTC";		/* Bitcoin testnet */
+	public static final String KEYTYPE_COIN_LTC		= "COIN_LTC";		/* Litecoin */
+	public static final String KEYTYPE_COIN_PPC		= "COIN_PPC";		/* Peercoin */
+	// Alt Coins to support soon:
+	public static final String KEYTYPE_COIN_FRC		= "COIN_FRC";		/* Freicoin */
+	public static final String KEYTYPE_COIN_DOGE		= "COIN_DOGE";		/* Dogecoin */
+	public static final String KEYTYPE_COIN_NMC		= "COIN_NMC";		/* Namecoin */
+	public static final String KEYTYPE_COIN_IXC		= "COIN_IXC";		/* Ixcoin */
+	public static final String KEYTYPE_COIN_UNO		= "COIN_UNO";		/* Unobtanium */
+	public static final String KEYTYPE_COIN_NVC		= "COIN_NVC";		/* Novacoin */
+	public static final String KEYTYPE_COIN_MZC		= "COIN_MZC";		/* MazaCoin */
+	public static final String KEYTYPE_COIN_ANC		= "COIN_ANC";		/* Anoncoin */
+	public static final String KEYTYPE_COIN_MAX		= "COIN_MAX";		/* MaxCoin */
 	// Bitcoin 2.0 type coins not implemented yet / Reserved
-	public static final String KEYTYPE_VC_XRP		= "VC_XRP";		/* Ripple */
-	public static final String KEYTYPE_VC_XCP		= "VC_XCP";		/* Counterparty */
-	public static final String KEYTYPE_VC_MSC		= "VC_MSC";		/* Mastercoin (Omni Layer) */
-	public static final String KEYTYPE_VC_NXT		= "VC_NXT";		/* Nxt */
-	public static final String KEYTYPE_VC_NXTV		= "VC_NXTV";		/* NXTventure */
-	public static final String KEYTYPE_VC_NXTP		= "VC_NXTP";		/* NXTprivacy */
-	public static final String KEYTYPE_VC_NXTTY		= "VC_NXTTY";		/* Nxttycoin */
-	public static final String KEYTYPE_VC_MMNXT		= "VC_MMNXT";		/* MMNXT */
+	public static final String KEYTYPE_COIN_XRP		= "COIN_XRP";		/* Ripple */
+	public static final String KEYTYPE_COIN_XCP		= "COIN_XCP";		/* Counterparty */
+	public static final String KEYTYPE_COIN_MSC		= "COIN_MSC";		/* Mastercoin (Omni Layer) */
+	public static final String KEYTYPE_COIN_NXT		= "COIN_NXT";		/* Nxt */
+	public static final String KEYTYPE_COIN_NXTV		= "COIN_NXTV";		/* NXTventure */
+	public static final String KEYTYPE_COIN_NXTP		= "COIN_NXTP";		/* NXTprivacy */
+	public static final String KEYTYPE_COIN_NXTTY		= "COIN_NXTTY";		/* Nxttycoin */
+	public static final String KEYTYPE_COIN_MMNXT		= "COIN_MMNXT";		/* MMNXT */
 	// unknown type coins not implemented yet / Reserved
-	public static final String KEYTYPE_VC_BTS		= "VC_BTS";		/* BitShares */
-	public static final String KEYTYPE_VC_XPY		= "VC_XPY";		/* PayCoin */
-	public static final String KEYTYPE_VC_STR		= "VC_STR";		/* Stellar */
-	public static final String KEYTYPE_VC_MAID		= "VC_MAID";		/* MaidSafeCoin */
-	public static final String KEYTYPE_VC_DRK		= "VC_DRK";		/* Darkcoin */
-	public static final String KEYTYPE_VC_NSR		= "VC_NSR";		/* NuShares */
-	public static final String KEYTYPE_VC_BANX		= "VC_BANX";		/* BanxShares */
-	public static final String KEYTYPE_VC_YBC		= "VC_YBC";		/* YbCoin */
-	public static final String KEYTYPE_VC_UNITY		= "VC_UNITY";		/* SuperNET */
-	public static final String KEYTYPE_VC_NBT		= "VC_NBT";		/* NuBits */
-	public static final String KEYTYPE_VC_FC2		= "VC_FC2";		/* FuelCoin */
-	public static final String KEYTYPE_VC_XMR		= "VC_XMR";		/* Monero */
-	public static final String KEYTYPE_VC_GEMZ		= "VC_GEMZ";		/* Gems */
-	public static final String KEYTYPE_VC_BLK		= "VC_BLK";		/* BlackCoin */
-	public static final String KEYTYPE_VC_BCN		= "VC_BCN";		/* Bytecoin */
-	public static final String KEYTYPE_VC_SWARM		= "VC_SWARM";		/* Swarm */
-	public static final String KEYTYPE_VC_ETC		= "VC_ETC";		/* Ethercoin */
-	public static final String KEYTYPE_VC_BTCD		= "VC_BTCD";		/* BitcoinDark */
-	public static final String KEYTYPE_VC_SJCX		= "VC_SJCX";		/* Storjcoin X */
-	public static final String KEYTYPE_VC_XTC		= "VC_XTC";		/* TileCoins */
-	public static final String KEYTYPE_VC_QRK		= "VC_QRK";		/* Quark */
-	public static final String KEYTYPE_VC_NOTE		= "VC_NOTE";		/* DNotes */
-	public static final String KEYTYPE_VC_MONA		= "VC_MONA";		/* MonaCoin */
-	public static final String KEYTYPE_VC_BITUSD		= "VC_BITUSD";		/* BitUSD */
-	public static final String KEYTYPE_VC_RDD		= "VC_RDD";		/* ReddCoin */
-	public static final String KEYTYPE_VC_DEX		= "VC_DEX";		/* InstantDEX */
-	public static final String KEYTYPE_VC_CLAM		= "VC_CLAM";		/* Clams */
-	public static final String KEYTYPE_VC_EMC		= "VC_EMC";		/* EmerCoin */
-	public static final String KEYTYPE_VC_XDN		= "VC_XDN";		/* DarkNote */
-	public static final String KEYTYPE_VC_PANGEA		= "VC_PANGEA";		/* Pangea Poker */
-	public static final String KEYTYPE_VC_IFC		= "VC_IFC";		/* Infinitecoin */
-	public static final String KEYTYPE_VC_WDC		= "VC_WDC";		/* WorldCoin */
-	public static final String KEYTYPE_VC_MEC		= "VC_MEC";		/* Megacoin */
-	public static final String KEYTYPE_VC_JINN		= "VC_JINN";		/* Jinn */
-	public static final String KEYTYPE_VC_SDC		= "VC_SDC";		/* ShadowCash */
-	public static final String KEYTYPE_VC_NAV		= "VC_NAV";		/* Navajo */
-	public static final String KEYTYPE_VC_XPM		= "VC_XPM";		/* Primecoin */
-	public static final String KEYTYPE_VC_JLH		= "VC_JLH";		/* jl777hodl */
-	public static final String KEYTYPE_VC_FTC		= "VC_FTC";		/* Feathercoin */
-	public static final String KEYTYPE_VC_VIA		= "VC_VIA";		/* Viacoin */
-	public static final String KEYTYPE_VC_I0C		= "VC_I0C";		/* I0Coin */
-	public static final String KEYTYPE_VC_PTS		= "VC_PTS";		/* BitShares PTS */
-	public static final String KEYTYPE_VC_SF0		= "VC_SF0";		/* sharkfund0 */
-	public static final String KEYTYPE_VC_FAIR		= "VC_FAIR";		/* Faircoin */
-	public static final String KEYTYPE_VC_BILS		= "VC_BILS";		/* BilShares */
-	public static final String KEYTYPE_VC_NLG		= "VC_NLG";		/* Guldencoin */
-	public static final String KEYTYPE_VC_POT		= "VC_POT";		/* PotCoin */
-	public static final String KEYTYPE_VC_HYPER		= "VC_HYPER";		/* Hyper */
-	public static final String KEYTYPE_VC_ARCH		= "VC_ARCH";		/* ARCHcoin */
-	public static final String KEYTYPE_VC_VRC		= "VC_VRC";		/* VeriCoin */
-	public static final String KEYTYPE_VC_BURST		= "VC_BURST";		/* Burst */
-	public static final String KEYTYPE_VC_UNB		= "VC_UNB";		/* UnbreakableCoin */
-	public static final String KEYTYPE_VC_SKYNET		= "VC_SKYNET";		/* SkyNET */
-	// ? public static final String KEYTYPE_VC_ANC		= "VC_ANC";		/* Anoncoin */
-	public static final String KEYTYPE_VC_XC		= "VC_XC";		/* XCurrency */
-	public static final String KEYTYPE_VC_URO		= "VC_URO";		/* Uro */
-	public static final String KEYTYPE_VC_DGB		= "VC_DGB";		/* DigiByte */
-	public static final String KEYTYPE_VC_CURE		= "VC_CURE";		/* CureCoin */
-	public static final String KEYTYPE_VC_ZET		= "VC_ZET";		/* Zetacoin */
-	public static final String KEYTYPE_VC_APC		= "VC_APC";		/* Applecoin */
-	public static final String KEYTYPE_VC_CANN		= "VC_CANN";		/* CannabisCoin */
-	public static final String KEYTYPE_VC_SYS		= "VC_SYS";		/* SysCoin */
-	public static final String KEYTYPE_VC_SPR		= "VC_SPR";		/* SpreadCoin */
-	public static final String KEYTYPE_VC_CNMT		= "VC_CNMT";		/* Coinomat */
-	public static final String KEYTYPE_VC_NXTC		= "VC_NXTC";		/* NXTcoinsco / Tradebots */
-	public static final String KEYTYPE_VC_MTC		= "VC_MTC";		/* Marinecoin */
-	public static final String KEYTYPE_VC_UTC		= "VC_UTC";		/* UltraCoin */
-	public static final String KEYTYPE_VC_XST		= "VC_XST";		/* Stealthcoin */
-	public static final String KEYTYPE_VC_DICE		= "VC_DICE";		/* NeoDICE */
-	public static final String KEYTYPE_VC_PND		= "VC_PND";		/* Pandacoin (PND) */
-	public static final String KEYTYPE_VC_SLR		= "VC_SLR";		/* SolarCoin */
-	public static final String KEYTYPE_VC_QORA		= "VC_QORA";		/* Qora */
-	public static final String KEYTYPE_VC_CCS		= "VC_CCS";		/* CryptoCoins */
-	public static final String KEYTYPE_VC_GLD		= "VC_GLD";		/* GoldCoin */
-	public static final String KEYTYPE_VC_BAY		= "VC_BAY";		/* BitBay */
-	public static final String KEYTYPE_VC_BITCNY		= "VC_BITCNY";		/* BitCNY */
-	public static final String KEYTYPE_VC_DGC		= "VC_DGC";		/* Digitalcoin */
-	public static final String KEYTYPE_VC_DEM		= "VC_DEM";		/* Deutsche eMark */
-	public static final String KEYTYPE_VC_XCPSCO		= "VC_XCPSCO";		/* Scotcoin */
-	public static final String KEYTYPE_VC_BLU		= "VC_BLU";		/* BlueCoin */
-	public static final String KEYTYPE_VC_BOST		= "VC_BOST";		/* BoostCoin */
-	public static final String KEYTYPE_VC_MOON		= "VC_MOON";		/* Mooncoin */
-	public static final String KEYTYPE_VC_VTC		= "VC_VTC";		/* Vertcoin */
-	public static final String KEYTYPE_VC_NODE		= "VC_NODE";		/* Node */
-	public static final String KEYTYPE_VC_MMXIV		= "VC_MMXIV";		/* Maiuticoin */
-	public static final String KEYTYPE_VC_DVC		= "VC_DVC";		/* Devcoin */
-	public static final String KEYTYPE_VC_OCUPY		= "VC_OCUPY";		/* Ocupy */
-	public static final String KEYTYPE_VC_ZEIT		= "VC_ZEIT";		/* Zeitcoin */
-	public static final String KEYTYPE_VC_SWIFT		= "VC_SWIFT";		/* BitSwift */
-	public static final String KEYTYPE_VC_DMD		= "VC_DMD";		/* Diamond */
-	public static final String KEYTYPE_VC_XDP		= "VC_XDP";		/* Dogeparty */
-	public static final String KEYTYPE_VC_CZC		= "VC_CZC";		/* CzechCrownCoin */
-	public static final String KEYTYPE_VC_PRVBET		= "VC_PRVBET";		/* Privatebet */
-	public static final String KEYTYPE_VC_ZCC		= "VC_ZCC";		/* ZcCoin */
-	public static final String KEYTYPE_VC_OPAL		= "VC_OPAL";		/* Opal */
-	public static final String KEYTYPE_VC_START		= "VC_START";		/* Startcoin */
-	public static final String KEYTYPE_VC_NTR		= "VC_NTR";		/* Neutrino */
-	public static final String KEYTYPE_VC_MRKT		= "VC_MRKT";		/* FreeMarket */
-	public static final String KEYTYPE_VC_NET		= "VC_NET";		/* NetCoin */
-	public static final String KEYTYPE_VC_VPN		= "VC_VPN";		/* VPNCoin */
-	public static final String KEYTYPE_VC_GSX		= "VC_GSX";		/* GlowShares */
-	public static final String KEYTYPE_VC_LTBC		= "VC_LTBC";		/* LTBcoin */
-	public static final String KEYTYPE_VC_GMC		= "VC_GMC";		/* GamersCoin */
-	public static final String KEYTYPE_VC_SYNC		= "VC_SYNC";		/* Sync */
-	public static final String KEYTYPE_VC_XWT		= "VC_XWT";		/* World Trade Funds */
-	public static final String KEYTYPE_VC_CCN		= "VC_CCN";		/* Cannacoin */
-	public static final String KEYTYPE_VC_NEM		= "VC_NEM";		/* NEMstake */
-	public static final String KEYTYPE_VC_JPC		= "VC_JPC";		/* JackpotCoin */
-	public static final String KEYTYPE_VC_PINK		= "VC_PINK";		/* PinkCoin */
-	public static final String KEYTYPE_VC_ATOMIC		= "VC_ATOMIC";		/* ATOMIC */
-	public static final String KEYTYPE_VC_AC		= "VC_AC";		/* AsiaCoin */
-	public static final String KEYTYPE_VC_MGW		= "VC_MGW";		/* MGW */
-	public static final String KEYTYPE_VC_MINT		= "VC_MINT";		/* Mintcoin */
-	public static final String KEYTYPE_VC_NAUT		= "VC_NAUT";		/* NautilusCoin */
-	public static final String KEYTYPE_VC_HBN		= "VC_HBN";		/* HoboNickels */
-	public static final String KEYTYPE_VC_XCH		= "VC_XCH";		/* ClearingHouse */
-	public static final String KEYTYPE_VC_KARM		= "VC_KARM";		/* Karmacoin */
-	public static final String KEYTYPE_VC_WATER		= "VC_WATER";		/* CleanWaterCoin */
-	public static final String KEYTYPE_VC_MYR		= "VC_MYR";		/* Myriadcoin */
-	public static final String KEYTYPE_VC_TIPS		= "VC_TIPS";		/* FedoraCoins */
-	public static final String KEYTYPE_VC_BBR		= "VC_BBR";		/* Boolberry */
-	public static final String KEYTYPE_VC_USDE		= "VC_USDE";		/* USDe */
-	public static final String KEYTYPE_VC_RIC		= "VC_RIC";		/* Riecoin */
-	public static final String KEYTYPE_VC_VIOR		= "VC_VIOR";		/* Viorcoin */
-	public static final String KEYTYPE_VC_BTM		= "VC_BTM";		/* Bitmark */
-	public static final String KEYTYPE_VC_UNC		= "VC_UNC";		/* UnionCoin */
-	public static final String KEYTYPE_VC_CGB		= "VC_CGB";		/* Cryptogenic Bullion */
-	public static final String KEYTYPE_VC_ARI		= "VC_ARI";		/* Aricoin */
-	public static final String KEYTYPE_VC_HYP		= "VC_HYP";		/* HyperStake */
-	public static final String KEYTYPE_VC_HTML5		= "VC_HTML5";		/* HTMLCOIN */
-	public static final String KEYTYPE_VC_FLT		= "VC_FLT";		/* FlutterCoin */
-	public static final String KEYTYPE_VC_EAC		= "VC_EAC";		/* EarthCoin */
-	public static final String KEYTYPE_VC_HZ		= "VC_HZ";		/* Horizon */
-	public static final String KEYTYPE_VC_NOO		= "VC_NOO";		/* NooCoin */
-	public static final String KEYTYPE_VC_EFL		= "VC_EFL";		/* Electronic Guilden */
-	// public static final String KEYTYPE_VC_TEST		= "VC_TEST";		/* TEST */	
-
+	public static final String KEYTYPE_COIN_BTS		= "COIN_BTS";		/* BitShares */
+	public static final String KEYTYPE_COIN_XPY		= "COIN_XPY";		/* PayCoin */
+	public static final String KEYTYPE_COIN_STR		= "COIN_STR";		/* Stellar */
+	public static final String KEYTYPE_COIN_MAID		= "COIN_MAID";		/* MaidSafeCoin */
+	public static final String KEYTYPE_COIN_DRK		= "COIN_DRK";		/* Darkcoin */
+	public static final String KEYTYPE_COIN_NSR		= "COIN_NSR";		/* NuShares */
+	public static final String KEYTYPE_COIN_BANX		= "COIN_BANX";		/* BanxShares */
+	public static final String KEYTYPE_COIN_YBC		= "COIN_YBC";		/* YbCoin */
+	public static final String KEYTYPE_COIN_UNITY		= "COIN_UNITY";		/* SuperNET */
+	public static final String KEYTYPE_COIN_NBT		= "COIN_NBT";		/* NuBits */
+	public static final String KEYTYPE_COIN_FC2		= "COIN_FC2";		/* FuelCoin */
+	public static final String KEYTYPE_COIN_XMR		= "COIN_XMR";		/* Monero */
+	public static final String KEYTYPE_COIN_GEMZ		= "COIN_GEMZ";		/* Gems */
+	public static final String KEYTYPE_COIN_BLK		= "COIN_BLK";		/* BlackCoin */
+	public static final String KEYTYPE_COIN_BCN		= "COIN_BCN";		/* Bytecoin */
+	public static final String KEYTYPE_COIN_SWARM		= "COIN_SWARM";		/* Swarm */
+	public static final String KEYTYPE_COIN_ETC		= "COIN_ETC";		/* Ethercoin */
+	public static final String KEYTYPE_COIN_BTCD		= "COIN_BTCD";		/* BitcoinDark */
+	public static final String KEYTYPE_COIN_SJCX		= "COIN_SJCX";		/* Storjcoin X */
+	public static final String KEYTYPE_COIN_XTC		= "COIN_XTC";		/* TileCoins */
+	public static final String KEYTYPE_COIN_QRK		= "COIN_QRK";		/* Quark */
+	public static final String KEYTYPE_COIN_NOTE		= "COIN_NOTE";		/* DNotes */
+	public static final String KEYTYPE_COIN_MONA		= "COIN_MONA";		/* MonaCoin */
+	public static final String KEYTYPE_COIN_BITUSD		= "COIN_BITUSD";	/* BitUSD */
+	public static final String KEYTYPE_COIN_RDD		= "COIN_RDD";		/* ReddCoin */
+	public static final String KEYTYPE_COIN_DEX		= "COIN_DEX";		/* InstantDEX */
+	public static final String KEYTYPE_COIN_CLAM		= "COIN_CLAM";		/* Clams */
+	public static final String KEYTYPE_COIN_EMC		= "COIN_EMC";		/* EmerCoin */
+	public static final String KEYTYPE_COIN_XDN		= "COIN_XDN";		/* DarkNote */
+	public static final String KEYTYPE_COIN_PANGEA		= "COIN_PANGEA";	/* Pangea Poker */
+	public static final String KEYTYPE_COIN_IFC		= "COIN_IFC";		/* Infinitecoin */
+	public static final String KEYTYPE_COIN_WDC		= "COIN_WDC";		/* WorldCoin */
+	public static final String KEYTYPE_COIN_MEC		= "COIN_MEC";		/* Megacoin */
+	public static final String KEYTYPE_COIN_JINN		= "COIN_JINN";		/* Jinn */
+	public static final String KEYTYPE_COIN_SDC		= "COIN_SDC";		/* ShadowCash */
+	public static final String KEYTYPE_COIN_NAV		= "COIN_NAV";		/* Navajo */
+	public static final String KEYTYPE_COIN_XPM		= "COIN_XPM";		/* Primecoin */
+	public static final String KEYTYPE_COIN_JLH		= "COIN_JLH";		/* jl777hodl */
+	public static final String KEYTYPE_COIN_FTC		= "COIN_FTC";		/* Feathercoin */
+	public static final String KEYTYPE_COIN_VIA		= "COIN_VIA";		/* Viacoin */
+	public static final String KEYTYPE_COIN_I0C		= "COIN_I0C";		/* I0Coin */
+	public static final String KEYTYPE_COIN_PTS		= "COIN_PTS";		/* BitShares PTS */
+	public static final String KEYTYPE_COIN_SF0		= "COIN_SF0";		/* sharkfund0 */
+	public static final String KEYTYPE_COIN_FAIR		= "COIN_FAIR";		/* Faircoin */
+	public static final String KEYTYPE_COIN_BILS		= "COIN_BILS";		/* BilShares */
+	public static final String KEYTYPE_COIN_NLG		= "COIN_NLG";		/* Guldencoin */
+	public static final String KEYTYPE_COIN_POT		= "COIN_POT";		/* PotCoin */
+	public static final String KEYTYPE_COIN_HYPER		= "COIN_HYPER";		/* Hyper */
+	public static final String KEYTYPE_COIN_ARCH		= "COIN_ARCH";		/* ARCHcoin */
+	public static final String KEYTYPE_COIN_VRC		= "COIN_VRC";		/* VeriCoin */
+	public static final String KEYTYPE_COIN_BURST		= "COIN_BURST";		/* Burst */
+	public static final String KEYTYPE_COIN_UNB		= "COIN_UNB";		/* UnbreakableCoin */
+	public static final String KEYTYPE_COIN_SKYNET		= "COIN_SKYNET";	/* SkyNET */
+	public static final String KEYTYPE_COIN_XC		= "COIN_XC";		/* XCurrency */
+	public static final String KEYTYPE_COIN_URO		= "COIN_URO";		/* Uro */
+	public static final String KEYTYPE_COIN_DGB		= "COIN_DGB";		/* DigiByte */
+	public static final String KEYTYPE_COIN_CURE		= "COIN_CURE";		/* CureCoin */
+	public static final String KEYTYPE_COIN_ZET		= "COIN_ZET";		/* Zetacoin */
+	public static final String KEYTYPE_COIN_APC		= "COIN_APC";		/* Applecoin */
+	public static final String KEYTYPE_COIN_CANN		= "COIN_CANN";		/* CannabisCoin */
+	public static final String KEYTYPE_COIN_SYS		= "COIN_SYS";		/* SysCoin */
+	public static final String KEYTYPE_COIN_SPR		= "COIN_SPR";		/* SpreadCoin */
+	public static final String KEYTYPE_COIN_CNMT		= "COIN_CNMT";		/* Coinomat */
+	public static final String KEYTYPE_COIN_NXTC		= "COIN_NXTC";		/* NXTcoinsco / Tradebots */
+	public static final String KEYTYPE_COIN_MTC		= "COIN_MTC";		/* Marinecoin */
+	public static final String KEYTYPE_COIN_UTC		= "COIN_UTC";		/* UltraCoin */
+	public static final String KEYTYPE_COIN_XST		= "COIN_XST";		/* Stealthcoin */
+	public static final String KEYTYPE_COIN_DICE		= "COIN_DICE";		/* NeoDICE */
+	public static final String KEYTYPE_COIN_PND		= "COIN_PND";		/* Pandacoin (PND) */
+	public static final String KEYTYPE_COIN_SLR		= "COIN_SLR";		/* SolarCoin */
+	public static final String KEYTYPE_COIN_QORA		= "COIN_QORA";		/* Qora */
+	public static final String KEYTYPE_COIN_CCS		= "COIN_CCS";		/* CryptoCoins */
+	public static final String KEYTYPE_COIN_GLD		= "COIN_GLD";		/* GoldCoin */
+	public static final String KEYTYPE_COIN_BAY		= "COIN_BAY";		/* BitBay */
+	public static final String KEYTYPE_COIN_BITCNY		= "COIN_BITCNY";	/* BitCNY */
+	public static final String KEYTYPE_COIN_DGC		= "COIN_DGC";		/* Digitalcoin */
+	public static final String KEYTYPE_COIN_DEM		= "COIN_DEM";		/* Deutsche eMark */
+	public static final String KEYTYPE_COIN_XCPSCO		= "COIN_XCPSCO";	/* Scotcoin */
+	public static final String KEYTYPE_COIN_BLU		= "COIN_BLU";		/* BlueCoin */
+	public static final String KEYTYPE_COIN_BOST		= "COIN_BOST";		/* BoostCoin */
+	public static final String KEYTYPE_COIN_MOON		= "COIN_MOON";		/* Mooncoin */
+	public static final String KEYTYPE_COIN_VTC		= "COIN_VTC";		/* Vertcoin */
+	public static final String KEYTYPE_COIN_NODE		= "COIN_NODE";		/* Node */
+	public static final String KEYTYPE_COIN_MMXIV		= "COIN_MMXIV";		/* Maiuticoin */
+	public static final String KEYTYPE_COIN_DVC		= "COIN_DVC";		/* Devcoin */
+	public static final String KEYTYPE_COIN_OCUPY		= "COIN_OCUPY";		/* Ocupy */
+	public static final String KEYTYPE_COIN_ZEIT		= "COIN_ZEIT";		/* Zeitcoin */
+	public static final String KEYTYPE_COIN_SWIFT		= "COIN_SWIFT";		/* BitSwift */
+	public static final String KEYTYPE_COIN_DMD		= "COIN_DMD";		/* Diamond */
+	public static final String KEYTYPE_COIN_XDP		= "COIN_XDP";		/* Dogeparty */
+	public static final String KEYTYPE_COIN_CZC		= "COIN_CZC";		/* CzechCrownCoin */
+	public static final String KEYTYPE_COIN_PRVBET		= "COIN_PRVBET";	/* Privatebet */
+	public static final String KEYTYPE_COIN_ZCC		= "COIN_ZCC";		/* ZcCoin */
+	public static final String KEYTYPE_COIN_OPAL		= "COIN_OPAL";		/* Opal */
+	public static final String KEYTYPE_COIN_START		= "COIN_START";		/* Startcoin */
+	public static final String KEYTYPE_COIN_NTR		= "COIN_NTR";		/* Neutrino */
+	public static final String KEYTYPE_COIN_MRKT		= "COIN_MRKT";		/* FreeMarket */
+	public static final String KEYTYPE_COIN_NET		= "COIN_NET";		/* NetCoin */
+	public static final String KEYTYPE_COIN_VPN		= "COIN_VPN";		/* VPNCoin */
+	public static final String KEYTYPE_COIN_GSX		= "COIN_GSX";		/* GlowShares */
+	public static final String KEYTYPE_COIN_LTBC		= "COIN_LTBC";		/* LTBcoin */
+	public static final String KEYTYPE_COIN_GMC		= "COIN_GMC";		/* GamersCoin */
+	public static final String KEYTYPE_COIN_SYNC		= "COIN_SYNC";		/* Sync */
+	public static final String KEYTYPE_COIN_XWT		= "COIN_XWT";		/* World Trade Funds */
+	public static final String KEYTYPE_COIN_CCN		= "COIN_CCN";		/* Cannacoin */
+	public static final String KEYTYPE_COIN_NEM		= "COIN_NEM";		/* NEMstake */
+	public static final String KEYTYPE_COIN_JPC		= "COIN_JPC";		/* JackpotCoin */
+	public static final String KEYTYPE_COIN_PINK		= "COIN_PINK";		/* PinkCoin */
+	public static final String KEYTYPE_COIN_ATOMIC		= "COIN_ATOMIC";	/* ATOMIC */
+	public static final String KEYTYPE_COIN_AC		= "COIN_AC";		/* AsiaCoin */
+	public static final String KEYTYPE_COIN_MGW		= "COIN_MGW";		/* MGW */
+	public static final String KEYTYPE_COIN_MINT		= "COIN_MINT";		/* Mintcoin */
+	public static final String KEYTYPE_COIN_NAUT		= "COIN_NAUT";		/* NautilusCoin */
+	public static final String KEYTYPE_COIN_HBN		= "COIN_HBN";		/* HoboNickels */
+	public static final String KEYTYPE_COIN_XCH		= "COIN_XCH";		/* ClearingHouse */
+	public static final String KEYTYPE_COIN_KARM		= "COIN_KARM";		/* Karmacoin */
+	public static final String KEYTYPE_COIN_WATER		= "COIN_WATER";		/* CleanWaterCoin */
+	public static final String KEYTYPE_COIN_MYR		= "COIN_MYR";		/* Myriadcoin */
+	public static final String KEYTYPE_COIN_TIPS		= "COIN_TIPS";		/* FedoraCoins */
+	public static final String KEYTYPE_COIN_BBR		= "COIN_BBR";		/* Boolberry */
+	public static final String KEYTYPE_COIN_USDE		= "COIN_USDE";		/* USDe */
+	public static final String KEYTYPE_COIN_RIC		= "COIN_RIC";		/* Riecoin */
+	public static final String KEYTYPE_COIN_VIOR		= "COIN_VIOR";		/* Viorcoin */
+	public static final String KEYTYPE_COIN_BTM		= "COIN_BTM";		/* Bitmark */
+	public static final String KEYTYPE_COIN_UNC		= "COIN_UNC";		/* UnionCoin */
+	public static final String KEYTYPE_COIN_CGB		= "COIN_CGB";		/* Cryptogenic Bullion */
+	public static final String KEYTYPE_COIN_ARI		= "COIN_ARI";		/* Aricoin */
+	public static final String KEYTYPE_COIN_HYP		= "COIN_HYP";		/* HyperStake */
+	public static final String KEYTYPE_COIN_HTML5		= "COIN_HTML5";		/* HTMLCOIN */
+	public static final String KEYTYPE_COIN_FLT		= "COIN_FLT";		/* FlutterCoin */
+	public static final String KEYTYPE_COIN_EAC		= "COIN_EAC";		/* EarthCoin */
+	public static final String KEYTYPE_COIN_HZ		= "COIN_HZ";		/* Horizon */
+	public static final String KEYTYPE_COIN_NOO		= "COIN_NOO";		/* NooCoin */
+	public static final String KEYTYPE_COIN_EFL		= "COIN_EFL";		/* Electronic Guilden */
+	public static final String KEYTYPE_COIN_TEST		= "COIN_TEST";		/* TEST */
+	
 	public static String FormatError(int ERROR) {
 		return (ERROR < 0 ? "-" : "")+
 			"0x"+

@@ -30,13 +30,7 @@ public class WebInterface {
 	@JavascriptInterface
 	public void copyToClipBoard(String text) {
 		if (text != null && !text.isEmpty()) {
-			try {
-				ClipboardManager clipboard = (ClipboardManager) mContext.getSystemService(mContext.CLIPBOARD_SERVICE);
-				clipboard.setText(text);
-				((MainActivity)mContext).ToastIt("Copied to clipboard");
-			} catch (Exception e) {
-				
-			}
+			((MainActivity)mContext).CopyStringToClipboard(text);
 		}
 	}
 	@JavascriptInterface
@@ -109,6 +103,10 @@ public class WebInterface {
 	@JavascriptInterface
 	public String GetBalanceValue(String vc) {
 		return ((MainActivity)mContext).GetBalanceValue(vc);
+	}
+	@JavascriptInterface
+	public String GetValueCoin(String vc) {
+		return ((MainActivity)mContext).GetValueCoin(vc);
 	}
 	@JavascriptInterface
 	public String bitcoinGetZeroBalance(String vc) {
