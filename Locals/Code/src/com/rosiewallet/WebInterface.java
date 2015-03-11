@@ -126,7 +126,7 @@ public class WebInterface {
 			PackageManager pm = mContext.getPackageManager();
 			String pn = mContext.getPackageName();
 			PackageInfo pi = pm.getPackageInfo(pn,0);
-			return pi.versionName;	
+			return pi.versionName + "<br>Rivet Java v" + Rivet.RIVETJAVA_VERSION;	
 		} catch(PackageManager.NameNotFoundException e) {
 			return "unknown";
 		}
