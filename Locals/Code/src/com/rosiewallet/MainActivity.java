@@ -720,29 +720,25 @@ public class MainActivity extends Activity  {
 			String PUBLICDATA = data.getStringExtra(Rivet.EXTRA_PUBLICDATA);
 			String ErrorDesc = "Get Key: ";
 			if (vc != null && PUBLICDATA != null) {
-				int ERROR = 0; // data.getIntExtra(Rivet.EXTRA_RESULTCODE,-1);
-				if (ERROR == 0) {
-					if (!PUBLICDATA.equals("")) {
-						VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
-						VCArray[VCIndex(vc)].PublicAddress = "Loading...";
-						VCArray[VCIndex(vc)].Signature = "";
-						VCArray[VCIndex(vc)].Encrypted = "";
-						VCArray[VCIndex(vc)].ToEncrypt = "";
-						VCArray[VCIndex(vc)].Decrypted = "";
-						VCArray[VCIndex(vc)].ToDecrypt = "";
-						VCArray[VCIndex(vc)].GotBalance = false;
-						VCArray[VCIndex(vc)].GotBalanceUC = false;
-						VCArray[VCIndex(vc)].GotBalanceList = false;
-						VCArray[VCIndex(vc)].Balance0Confirm = 0;
-						VCArray[VCIndex(vc)].Balance1Confirm = 0;
-						VCArray[VCIndex(vc)].Value = 0;
-						VCArray[VCIndex(vc)].fee = LoadFee(vc);
-						// ToastIt("Got Public Key now getting address "+vc);
-						GetPublicAddressFromKeyName(vc);
-					}
-					else ToastIt(ErrorDesc+"PublicData is blank");
+				if (!PUBLICDATA.equals("")) {
+					VCArray[VCIndex(vc)].PublicKey = PUBLICDATA;
+					VCArray[VCIndex(vc)].PublicAddress = "Loading...";
+					VCArray[VCIndex(vc)].Signature = "";
+					VCArray[VCIndex(vc)].Encrypted = "";
+					VCArray[VCIndex(vc)].ToEncrypt = "";
+					VCArray[VCIndex(vc)].Decrypted = "";
+					VCArray[VCIndex(vc)].ToDecrypt = "";
+					VCArray[VCIndex(vc)].GotBalance = false;
+					VCArray[VCIndex(vc)].GotBalanceUC = false;
+					VCArray[VCIndex(vc)].GotBalanceList = false;
+					VCArray[VCIndex(vc)].Balance0Confirm = 0;
+					VCArray[VCIndex(vc)].Balance1Confirm = 0;
+					VCArray[VCIndex(vc)].Value = 0;
+					VCArray[VCIndex(vc)].fee = LoadFee(vc);
+					// ToastIt("Got Public Key now getting address "+vc);
+					GetPublicAddressFromKeyName(vc);
 				}
-				else ToastIt(ErrorDesc+ERROR);
+				else ToastIt(ErrorDesc+"PublicData is blank");
 			}
 			// else ToastIt(ErrorDesc+"returned null values"); can occur if keys are not established yet
 		}
